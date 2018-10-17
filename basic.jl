@@ -1,15 +1,11 @@
 using Revise
 using DynamicEnergyBudgets
 using Unitful
-
 using Flatten
 using OrdinaryDiffEq
 using DifferentialEquations
+
 using Plots
-f = @ode_def LotkaVolterraExample begin
-  d🐁  = α*🐁  - β*🐁*🐈
-  d🐈 = -γ*🐈 + δ*🐁*🐈
-end α β γ δ
 
 u0 = [10.0, 10.0, 10.0, 10.0]
 prob = ODEProblem(f, u0, (0.0, 100.0))
@@ -68,12 +64,12 @@ labels = reshape(string.(vcat(STATE,STATE,STATE)), 1, 18)
 
 du = [0.0 for i in 1:12]u"mol/hr"
 u = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]u"mol"
+t = 0u"hr":1u"hr":8760u"hr"
 # du = [0.0 for i in 1:18]u"mol/hr"
 # u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 10.0]u"mol"
 # u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
-const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
+# const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
 
-t = 0u"hr":1u"hr":8760u"hr"
 organism = DynamicEnergyBudgets.Plant(time=t);
 typeof(reconstruct(organism, flatten(Tuple, organism)))
 typeof(reconstruct(organism, flatten(Vector, organism)))
@@ -81,11 +77,17 @@ organism = DynamicEnergyBudgets.Plant(environment=env2, time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(environment=env2, time=t);
-organism(du, u, nothing, 1u"hr");
+organism = DynamicEnergyBudgets.Plant(time=t);
+organism = DynamicEnergyBudgets.PlantCN(time=t);
+organism(du, u, nothing, 1u"hr")
 
 
-prob = DiscreteProblem(organism, u, (0u"hr", 8759u"hr"))
+
+prob = DiscreteProblem(organism, u, (0u"hr", 6000u"hr"))
 sol = solve(prob, FunctionMap(scale_by_time = true))
+
+plot(sol)
+p = plot(sol.t, sol', size=(1000, 700))
 
 # solve(prob, FunctionMap(scale_by_time = true))
 using BenchmarkTools
