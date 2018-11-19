@@ -4,17 +4,20 @@ using UnitlessFlatten
 using OrdinaryDiffEq
 using DynamicEnergyBudgets
 using Photosynthesis
-using AxisArrays
 using InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil
 using Mux
 using FieldMetadata
 # using IterableTables, DataFrames, TypedTables
 # using JLD2
-using Microclimate
-using Plots, UnitfulPlots, PlotNested, StatPlots
+# using Microclimate
+using Plots
+using UnitfulPlots
+using PlotNested
+# using StatPlots
 import Plots:px, pct, GridLayout
 import InteractBase: WidgetTheme, libraries
 using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, scaling, define_organs, photosynthesis, split_state
+using Profile
 
 dir = "/home/raf/julia/DynamicEnergyBudgets/scratch/"
 # dir = "/home/cloud"
@@ -23,43 +26,18 @@ dir = "/home/raf/julia/DynamicEnergyBudgets/scratch/"
 # libraries(::MyTheme) = vcat(libraries(Bulma()), [joinpath(dir, "custom.css")])
 # settheme!(MyTheme())
 # gr()
-pyplot()
+plotly()
+# pyplot()
 
-# function load_environment()
-#     # using IndexedTables
-#     environment = load(joinpath(dir, "environment.jld"))["environment"]
-#     # environment = nichemap_global("Adelaide", years=10)
-#     env2 = Microclimate.MicroclimateTable(
-#       Table(environment.soil),
-#       Table(environment.shadsoil),
-#       Table(environment.metout),
-#       Table(environment.shadmet),
-#       Table(environment.soilmoist),
-#       Table(environment.shadmoist),
-#       Table(environment.humid),
-#       Table(environment.shadhumid),
-#       Table(environment.soilpot),
-#       Table(environment.shadpot),
-#       Table(environment.plant),
-#       Table(environment.shadplant),
-#       environment.RAINFALL,
-#       environment.dim,
-#       environment.ALTT,
-#       environment.REFL,
-#       environment.MAXSHADES,
-#       environment.longlat,
-#       environment.nyears,
-#       environment.timeinterval,
-#       environment.minshade,
-#       environment.maxshade,
-#       environment.DEP,
-#     )
-# end
-
-const t = 0:1:10000
+const tspan = 0:1:10000
 const statelabels = vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])
-const u12 = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
-const u18 = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
+
+init_state(model) = init_state(model.params)
+init_state(modelobs::Observable) = init_state(modelobs[].params)
+init_state(::NTuple{2,ParamsCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 2, 0.0]
+init_state(::NTuple{2,ParamsCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
+init_state(::NTuple{3,ParamsCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 10, 0.0]
+init_state(::NTuple{3,ParamsCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
 
 photo(o, u, x) = begin
     update_photovars(o.vars.assimilation, x)
@@ -69,40 +47,62 @@ end
 update_photovars(v::CarbonVars, x) = v.J_L_F = x * oneunit(v.J_L_F)
 update_photovars(v::Photosynthesis.PhotoVars, x) = v.par = x * oneunit(v.par)
 
-function make_plot(model, checkobs, sliderobs, fluxobs, timespan)
+function make_plot(model, varobs, stateobs, paramobs, fluxobs, timespan)
     # namedparams = AxisArray([params...], Axis{:parameters}(names))
+    plotsize=(1700, 800)
     # try
-    length(sliderobs) > 0 || return plot()
-        m = reconstruct(model, sliderobs)
+        length(paramobs) > 0 || return plot()
+        m = reconstruct(model, paramobs)
         organs = define_organs(m, 1)
         o = organs[1]
-        state = split_state(organs, u12 .* 10000, 0)
-        dataplots = plot_selected(model, checkobs, 1:timespan)
-        prob = DiscreteProblem(m, u12, (1, timespan))
+        u = stateobs
+        state = split_state(organs, u, 0)
+        dataplots = plot_selected(model, varobs, 1:timespan)
+        prob = DiscreteProblem(m, u, (1, timespan))
         sol = solve(prob, FunctionMap(scale_by_time = true))
-        # solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, labels=statelabels[1:6], ylabel="State (CMol)", 
-                      # xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation).name, " - time (hr)"))
-        # solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, labels=statelabels[7:12], ylabel="State (CMol)", 
-                      # xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation).name, " - time (hr)"))
-        solplot1 = plot(sol.t, sol', legend=:topleft, labels=reshape(statelabels, 1, length(statelabels)), ylabel="State (CMol)", 
+        solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, labels=reshape(statelabels[1:6], 1, 6), ylabel="State (CMol)",
                       xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation).name, " - time (hr)"))
-        # solplot2 = plot(sol.t, sol', vars = [7:12...], plotdensity=400, legend=:topleft, labels=statelabels[7:12], ylabel="State (CMol)", 
-                      # xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation).name, " - time (hr)"))
-        solplot = plot(solplot1, dataplots..., layout=Plots.GridLayout(1+length(dataplots), 1))
-        tempcorr(10u"°C", m.shared.tempcorr)
-        arrh = plot(x -> ustrip(tempcorr(x * 1.0u"°C", m.shared.tempcorr)), 0.0:1.0:50.0, legend=false, ylabel="Correction", xlabel="°C")
-        scaleplot(i) = plot(x -> ustrip(scaling(m.params[i].scaling, x * 1.0u"mol")), 0.0:0.01:100.0, legend=false, ylabel="Correction", xlabel="CMols Stucture")
-        scaling1 = scaleplot(1)
-        scaling2 = scaleplot(2)
-        photoplot = plot(x -> photo(organs[1], state[1], x), 0:10:4000) 
-        funcs = plot(arrh, scaling1, scaling2, photoplot, layout=Plots.GridLayout(4, 1))
+        solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, labels=reshape(statelabels[7:12], 1, 6), ylabel="State (CMol)",
+                      xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation).name, " - time (hr)"))
+        fluxplots = []
+        if length(fluxobs) > 0
+            plot_fluxes!(fluxplots, fluxobs[1], m.records[1].J, 1:timespan)
+            plot_fluxes!(fluxplots, fluxobs[2], m.records[1].J1, 1:timespan)
+            plot_fluxes!(fluxplots, fluxobs[3], m.records[2].J, 1:timespan)
+            plot_fluxes!(fluxplots, fluxobs[4], m.records[2].J1, 1:timespan)
+        end
+        timeplots = plot(solplot1, solplot2, dataplots..., fluxplots..., layout=Plots.GridLayout(2+length(dataplots)+length(fluxplots), 1))
+
+        # tempplot = plot(x -> ustrip(tempcorr(x * 1.0u"°C", m.shared.tempcorr)), 0.0:1.0:50.0, legend=false, ylabel="Correction", xlabel="°C")
+        # scaleplots = plot_scaling.(m.params)
+        # photoplot = plot(x -> photo(organs[1], state[1], x), 0:10:4000, ylabel="C uptake", xlabel="Irradiance")
+        # funcplots = plot(tempplot, scaleplots..., photoplot, layout=Plots.GridLayout(2 + length(scaleplots), 1))
+
         l = Plots.GridLayout(1, 2)
         l[1, 1] = GridLayout(1, 1, width=0.8pct)
         l[1, 2] = GridLayout(1, 1, width=0.2pct)
-        plot(solplot, funcs, size=(1700, 800), layout=l) #, fmt = :png
+        plot(timeplots, size=plotsize) #, layout=l, fmt = :png
     # catch err
-        # solplot = plot(xlabel="model run failed", size=(1700, 800))
+        # plot(xlabel="model run failed", size=plotsize)
     # end
+end
+
+plot_scaling(p) = plot(x -> ustrip(scaling(p.scaling, x * 1.0u"mol")), 0.0:0.01:100.0,
+                       legend=false, ylabel="Correction", xlabel="CMols Stucture")
+
+plot_fluxes!(plots, obs, J, tspan) = begin
+    ps = []
+    labels = []
+    Jstripped = ustrip(J)
+    for y in 1:size(J, 1), x in 1:size(J, 2)
+        if obs[y, x]
+            push!(labels, "$y, $x")
+            push!(ps, map(t -> Jstripped[y, x, t], tspan .+ 1))
+        end
+    end
+    if length(ps) > 0
+        push!(plots, plot(tspan, ps, labels=reshape(labels, 1, length(labels))))
+    end
 end
 
 function spreadwidgets(widgets; cols = 7)
@@ -122,84 +122,110 @@ function spreadwidgets(widgets; cols = 7)
     hbox(vboxes...)
 end
 
+allsubtypes(x) = begin
+    st = subtypes(x)
+    if length(st) > 0
+        allsubtypes((st...,))
+    else
+        (x,)
+    end
+end
+allsubtypes(t::Tuple{X,Vararg}) where X = (allsubtypes(t[1])..., allsubtypes(Base.tail(t))...,)
+allsubtypes(::Tuple{}) = ()
+
+build_model(paramsobs, rejectionobs, translocationobs, scalingobs,
+            allometryobs, assimilationobs, tempobs, env) = begin
+    pkwargs = (rejection=rejectionobs(), translocation=translocationobs(),
+              scaling=scalingobs(), allometry=allometryobs())
+    p1 = paramsobs(;pkwargs..., assimilation=ConstantCAssim())
+    p2 = paramsobs(;pkwargs..., assimilation=ConstantNAssim())
+    sh = SharedParams(tempcorr=tempobs())
+    Organism(params=(p1, p2), shared=sh, environment=env, time=tspan,
+             vars=(DynamicEnergyBudgets.ShootVars(), DynamicEnergyBudgets.RootVars()))
+end
+
 function muxapp(req) # an "App" takes a request, returns the output
-    env2 = nothing #load_environment()
+    env = nothing #load_environment()
+    emptyplot = plot()
 
-    noenv = button("No Environment")
-    plantcne = button("PlantCNE")
-    plantcn = button("PlantCN")
-    no_maturity = button("No Maturity")
-    constant = button("Constant Assimilation")
-    fvcbplant = button("Farquhar")
-    # plant3 = button("3 organ plant")
-    # fvcbplant3 = button("3 organ Farquhar")
     timespan = slider(20:9999, label="Timespan")
+    paramsdrop = dropdown([Nothing, allsubtypes(AbstractParams)...], label="Params")
+    rejectiondrop = dropdown([Nothing, allsubtypes(AbstractRejection)...], label="Rejection")
+    translocationdrop = dropdown([Nothing, allsubtypes(AbstractTranslocation)...], label="Translocation")
+    scalingdrop = dropdown([Nothing, allsubtypes(AbstractScaling)...], label="Scaling")
+    allometrydrop = dropdown([Nothing, allsubtypes(AbstractAllometry)...], label="Allometry")
+    assimilationdrop = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
+    tempdrop = dropdown([Nothing, allsubtypes(AbstractTempCorr)...], label="Temp Correction")
+    dropbox = hbox(paramsdrop, rejectiondrop, translocationdrop, scalingdrop, allometrydrop, assimilationdrop, tempdrop, timespan)
 
-    model = Observable{Any}(DynamicEnergyBudgets.Plant(environment=env2, time=t))
-    u = Observable{Vector{Float64}}(u12)
-    plt = Observable{Any}(0);
-    sliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
-    sliderobs = Observable{Vector{Float64}}(Float64[]);
-    sliderbox = Observable{Any}(dom"div"());
-    checks = Observable{Vector{Widget{:checkbox}}}(Widget{:checkbox}[]);
-    checkobs = Observable{Vector{Bool} where N}(Bool[]);
-    checkboxbox = Observable{Any}(0);
+    modelobs = Observable{Any}(DynamicEnergyBudgets.PlantCN(environment=env, time=tspan))
+    map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, rejectiondrop, translocationdrop, scalingdrop,
+                                                         allometrydrop, assimilationdrop, tempdrop)))..., env)
 
+    plt = Observable{typeof(emptyplot)}(emptyplot);
 
-    # map!(x -> u12, u, observe(plant));
-    # map!(x -> u12, u, observe(constant));
-    # map!(x -> u12, u, observe(no_maturity));
-    # map!(x -> u12, u, observe(fvcbplant));
-    # map!(x -> u18, u, observe(fvcbplant3));
-    # map!(x -> u18, u, observe(plant3));
+    paramsliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
+    paramobs = Observable{Vector{Float64}}(Float64[]);
+    parambox = Observable{typeof(dom"div"())}(dom"div"());
 
-    map!(x -> DynamicEnergyBudgets.Plant(time=t), model, observe(noenv));
-    map!(x -> DynamicEnergyBudgets.Plant(environment=env2, time=t), model, observe(plantcne));
-    map!(x -> DynamicEnergyBudgets.PlantCN(environment=env2, time=t), model, observe(plantcn));
-    map!(x -> DynamicEnergyBudgets.ConstantPlant(environment=env2, time=t), model, observe(constant));
-    map!(x -> DynamicEnergyBudgets.NoMaturityPlant(environment=env2, time=t), model, observe(no_maturity));
-    map!(x -> DynamicEnergyBudgets.FvCBPlant(environment=env2, time=t), model, observe(fvcbplant));
-    # map!(x -> DynamicEnergyBudgets.Plant3(environment=env2, time=t), model, observe(plant3));
-    # map!(x -> DynamicEnergyBudgets.FvCBPlant3(environment=env2, time=t), model, observe(fvcbplant3));
+    varchecks = Observable{Vector{Widget{:checkbox}}}(Widget{:checkbox}[]);
+    varobs = Observable{Vector{Bool}}(Bool[]);
+    varbox = Observable{typeof(dom"div"())}(dom"div"());
 
-    function make_checks(m)
+    statesliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
+    stateobs = Observable{Vector{Float64}}(init_state(modelobs[]));
+    statebox = Observable{typeof(dom"div"())}(dom"div"());
+
+    make_varchecks(m) = begin
         checks = plotchecks(m)
-        map!((x...) -> [x...], checkobs, observe.(checks)...)
+        map!((x...) -> [x...], varobs, observe.(checks)...)
         checks
     end
-    map!(make_checks, checks, model);
 
-    flux_grids = (make_grid(STATE, TRANS), make_grid(STATE1, TRANS1,),
-                  make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
-    flux_interface = hbox(arrange_grid.(flux_grids)...)
-    fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
-
-    function make_sliders(m)
+    make_paramsliders(m) = begin
         params = flatten(Vector, m)
         fnames = fieldnameflatten(Vector, m)
         parents = parentflatten(Vector, m)
         limits = metaflatten(Vector, m, DynamicEnergyBudgets.limits)
         descriptions = metaflatten(Vector, m, DynamicEnergyBudgets.description)
         attributes = broadcast((p, n, d) -> Dict(:title => "$p.$n: $d"), parents, fnames, descriptions)
-        sl = broadcast((x,l,v,a) -> InteractBase.slider(x[1]:(x[2]-x[1])/100:x[2], label=string(l), value=v, attributes=a), 
+
+        sl = broadcast((x,l,v,a) -> InteractBase.slider(x[1]:(x[2]-x[1])/100:x[2], label=string(l), value=v, attributes=a),
                        limits, fnames, params, attributes)
-        # description = metaflatten(Vector, m, DynamicEnergyBudgets.label)
-        # InteractBase.tooltip!.(sliders, description) 
-        map!((x...) -> [x...], sliderobs, throttle.(0.1, observe.(sl))...) 
+        map!((x...) -> [x...], paramobs, throttle.(0.2, observe.(sl))...)
         sl
     end
 
-    map!(make_sliders, sliders, model);
-    map!(make_plot, plt, model, checkobs, sliderobs, fluxobs, throttle(0.1, observe(timespan)))
+    make_statesliders(m) = begin
+        sl = state_slider.(statelabels, init_state(m))
+        map!((x...) -> [x...], stateobs, throttle.(0.2, observe.(sl))...)
+        sl
+    end
 
-    map!(c -> hbox(c...), checkboxbox, checks)
-    map!(s -> spreadwidgets(s), sliderbox, sliders)
-    model[] = DynamicEnergyBudgets.Plant(time=t);
-    o = observe(sliders[][5])
-    o[] = 0.45699 
-    modelbox = hbox("Model: ", noenv, plantcne, plantcn, no_maturity, constant, fvcbplant, timespan)
-    ui = vbox(plt, modelbox, sliderbox, checkboxbox, flux_interface);
+    flux_grids = (make_grid(STATE, TRANS), make_grid(STATE1, TRANS1,),
+                  make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
+    fluxbox = hbox(arrange_grid.(flux_grids)...)
+    fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
+
+    map!(make_varchecks, varchecks, modelobs)
+    map!(make_statesliders, statesliders, modelobs)
+    map!(make_paramsliders, paramsliders, modelobs)
+    map!(make_plot, plt, modelobs, varobs, stateobs, paramobs, fluxobs, throttle(0.3, observe(timespan)))
+
+
+    map!(c -> hbox(c...), varbox, varchecks)
+    map!(s -> spreadwidgets(s), parambox, paramsliders)
+    map!(s -> spreadwidgets(s), statebox, statesliders)
+
+    modelobs[] = DynamicEnergyBudgets.Plant(time=tspan);
+    observe(paramsliders[][5])[] = 0.45699
+
+    # modelbox = hbox("Model: ", noenv, plantcne, plantcn, no_maturity, constantcn, constantcne, fvcbplant)
+    ui = vbox(plt, dropbox, fluxbox, varbox, parambox, statebox);
 end
+
+state_slider(label, val) =
+    slider(vcat(exp10.(range(-4, stop = 1, length = 100))), label=label, value=val)
 
 make_grid(rownames, colnames) = begin
     rows = length(rownames)
@@ -211,38 +237,28 @@ arrange_grid(a) = hbox((vbox(a[:,col]...) for col in 1:size(a, 2))...)
 
 observe_grid(a) = map((t...) -> [t[i + size(a,1) * (j - 1)] for i in 1:size(a,1), j in 1:size(a,2)], observe.(a)...)
 
-# Compile everything first
-env2 = nothing # load_environment()
-a = DynamicEnergyBudgets.ConstantPlant(time=t)
-a = DynamicEnergyBudgets.ConstantPlant(environment=env2, time=t)
-b = DynamicEnergyBudgets.NoMaturityPlant(environment=env2, time=t)
-c = DynamicEnergyBudgets.FvCBPlant(environment=env2, time=t)
-d = DynamicEnergyBudgets.Plant(environment=env2, time=t)
-# e = DynamicEnergyBudgets.Plant3(environment=env2, time=t)
-# f = DynamicEnergyBudgets.FvCBPlant3(environment=env2, time=t)
-make_plot(a, (true), flatten(a), (), 1000)
-make_plot(b, (true), flatten(b), (), 1000)
-make_plot(c, (true), flatten(c), (), 1000)
-make_plot(d, (true), flatten(d), (), 1000)
-# make_plot(e, u18, (true), flatten(e), 1000)
-# make_plot(f, u18, (true), flatten(f), 1000)
-# muxapp(1)
+using ProfileView
+Profile.clear()
 
-w = Window(Dict("webPreferences"=>Dict("zoomFactor"=>0.7)));
-Blink.AtomShell.@dot w webContents.setZoomFactor(0.7)
-ui = muxapp(nothing) 
+ui = muxapp(nothing)
+w = Window(Dict("webPreferences"=>Dict("zoomFactor"=>0.6)));
+Blink.AtomShell.@dot w webContents.setZoomFactor(0.6)
 body!(w, ui);
 # opentools(w)
 
+# @profile for i in 1:10 make_plot(a, (true), flatten(a), (), 1000) end
+# ProfileView.view()
+
+# a(similar(u12), u12, nothing, 1)
 # webio_serve(page("/", req -> muxapp(req)), 8000)
 
-# function accordian(sliderbox)
+# function accordian(parambox)
 #  dom"div"(
 #   dom"section[class=accordions]"(
 #       dom"article[class=accordion is-active]"(
 #           dom"div[class=accordion-header toggle]"( "Sliders"),
 #           dom"div[class=accordion-body]"(
-#              dom"div[class=accordion-content]"(sliderbox))),
+#              dom"div[class=accordion-content]"(parambox))),
 #       dom"article[class=accordion]"(
 #           dom"div[class=accordion-header]"("Plots"),
 #           dom"div[class=accordion-body]"(
