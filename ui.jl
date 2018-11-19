@@ -133,13 +133,12 @@ end
 allsubtypes(t::Tuple{X,Vararg}) where X = (allsubtypes(t[1])..., allsubtypes(Base.tail(t))...,)
 allsubtypes(::Tuple{}) = ()
 
-build_model(paramsobs, rejectionobs, translocationobs, scalingobs,
-            allometryobs, assimilationobs, tempobs, env) = begin
-    pkwargs = (rejection=rejectionobs(), translocation=translocationobs(),
-              scaling=scalingobs(), allometry=allometryobs())
-    p1 = paramsobs(;pkwargs..., assimilation=ConstantCAssim())
-    p2 = paramsobs(;pkwargs..., assimilation=ConstantNAssim())
-    sh = SharedParams(tempcorr=tempobs())
+build_model(params, mat, rej, trans, scaling, allometry, assim, temp, feedback, env) = begin
+    pkwargs = (maturity=mat(), rejection=rej(), translocation=trans(),
+              scaling=scaling(), allometry=allometry())
+    p1 = params(;pkwargs..., assimilation=ConstantCAssim())
+    p2 = params(;pkwargs..., assimilation=ConstantNAssim())
+    sh = SharedParams(tempcorr=temp(), feedback=feedback())
     Organism(params=(p1, p2), shared=sh, environment=env, time=tspan,
              vars=(DynamicEnergyBudgets.ShootVars(), DynamicEnergyBudgets.RootVars()))
 end
@@ -149,18 +148,30 @@ function muxapp(req) # an "App" takes a request, returns the output
     emptyplot = plot()
 
     timespan = slider(20:9999, label="Timespan")
+    reload = button("Reload")
     paramsdrop = dropdown([Nothing, allsubtypes(AbstractParams)...], label="Params")
+    maturitydrop = dropdown([Nothing, allsubtypes(AbstractMaturity)...], label="Maturity")
     rejectiondrop = dropdown([Nothing, allsubtypes(AbstractRejection)...], label="Rejection")
     translocationdrop = dropdown([Nothing, allsubtypes(AbstractTranslocation)...], label="Translocation")
     scalingdrop = dropdown([Nothing, allsubtypes(AbstractScaling)...], label="Scaling")
     allometrydrop = dropdown([Nothing, allsubtypes(AbstractAllometry)...], label="Allometry")
     assimilationdrop = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
     tempdrop = dropdown([Nothing, allsubtypes(AbstractTempCorr)...], label="Temp Correction")
-    dropbox = hbox(paramsdrop, rejectiondrop, translocationdrop, scalingdrop, allometrydrop, assimilationdrop, tempdrop, timespan)
+    feedbackdrop = dropdown([Nothing, allsubtypes(AbstractStateFeedback)...], label="State Feedback")
+    dropbox = hbox(timespan, reload, paramsdrop, maturitydrop, rejectiondrop, 
+                   translocationdrop, scalingdrop, allometrydrop, assimilationdrop, tempdrop, feedbackdrop)
 
     modelobs = Observable{Any}(DynamicEnergyBudgets.PlantCN(environment=env, time=tspan))
-    map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, rejectiondrop, translocationdrop, scalingdrop,
-                                                         allometrydrop, assimilationdrop, tempdrop)))..., env)
+    map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, maturitydrop, rejectiondrop, translocationdrop, scalingdrop,
+                                                         allometrydrop, assimilationdrop, tempdrop, feedbackdrop)))..., env)
+    on(observe(reload)) do x
+        model = build_model(paramsdrop[], maturitydrop[], rejectiondrop[], translocationdrop[], scalingdrop[],
+                            allometrydrop[], assimilationdrop[], tempdrop[], feedbackdrop[], env)
+        params = flatten(model)
+        for (i, p) in enumerate(paramsliders[])
+            p[] = params[i]
+        end
+    end
 
     plt = Observable{typeof(emptyplot)}(emptyplot);
 
