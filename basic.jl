@@ -71,7 +71,7 @@ t = 0u"hr":1u"hr":8760u"hr"
 # const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
 
 organism = DynamicEnergyBudgets.Plant(time=t);
-organism = DynamicEnergyBudgets.Plant(environment=env2, time=t);
+organism = DynamicEnergyBudgets.Plant(environment=env, time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(environment=env2, time=t);
@@ -80,8 +80,7 @@ organism = DynamicEnergyBudgets.PlantCN(time=t);
 organism(du, u, nothing, 1u"hr")
 
 
-
-prob = DiscreteProblem(organism, u, (0u"hr", 6000u"hr"))
+prob = DiscreteProblem(organism, u, (0u"hr", 1000u"hr"))
 sol = solve(prob, FunctionMap(scale_by_time = true))
 
 plot(sol)
@@ -95,37 +94,14 @@ Profile.clear()
 @btime $organism($du, $u, nothing, 1u"hr");
 
 
-using JLD
+using JLD2
 using Microclimate
 using IterableTables
 using DataFrames
 using TypedTables
 # using IndexedTables
-environment = load("../DynamicEnergyBudgets/scratch/environment.jld")["environment"]
-# environment = nichemap_global("Adelaide", years=10)
-
-env2 = Microclimate.MicroclimateTable(
-  Table(environment.soil),
-  Table(environment.shadsoil),
-  Table(environment.metout),
-  Table(environment.shadmet),
-  Table(environment.soilmoist),
-  Table(environment.shadmoist),
-  Table(environment.humid),
-  Table(environment.shadhumid),
-  Table(environment.soilpot),
-  Table(environment.shadpot),
-  Table(environment.plant),
-  Table(environment.shadplant),
-  environment.RAINFALL,
-  environment.dim,
-  environment.ALTT,
-  environment.REFL,
-  environment.MAXSHADES,
-  environment.longlat,
-  environment.nyears,
-  environment.timeinterval,
-  environment.minshade,
-  environment.maxshade,
-  environment.DEP,
-)
+# environment = load("../DynamicEnergyBudgets/scratch/environment.jld")["environment"]
+using NicheMap
+# environment = nichemap_global([144,37], years=10)
+# @save "environment.jld" environment
+@load "environment.jld"

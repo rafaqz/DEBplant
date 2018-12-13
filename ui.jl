@@ -7,27 +7,25 @@ using DynamicEnergyBudgets
 using InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil
 using Mux
 using FieldMetadata
-# using IterableTables, DataFrames, TypedTables
-# using JLD2
-# using Microclimate
-using Plots
-using UnitfulPlots
-using PlotNested
+using Plots, UnitfulPlots, PlotNested
 # using StatPlots
 import Plots:px, pct, GridLayout
 import InteractBase: WidgetTheme, libraries
 using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, calc_scaling, define_organs, photosynthesis, split_state
-using Profile
 
-dir = "/home/raf/julia/DynamicEnergyBudgets/scratch/"
+include("environment.jl")
+
+# dir = "/home/raf/julia/DynamicEnergyBudgets/scratch/"
 # dir = "/home/cloud"
 
 # struct MyTheme <: WidgetTheme; end
 # libraries(::MyTheme) = vcat(libraries(Bulma()), [joinpath(dir, "custom.css")])
 # settheme!(MyTheme())
+#
 # gr()
 plotly()
 # pyplot()
+
 
 const tspan = 0:1:10000
 const statelabels = vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])
@@ -48,7 +46,6 @@ update_photovars(v::CarbonVars, x) = v.J_L_F = x * oneunit(v.J_L_F)
 update_photovars(v::Photosynthesis.PhotoVars, x) = v.par = x * oneunit(v.par)
 
 function make_plot(model, varobs, stateobs, paramobs, fluxobs, tstop)
-    # namedparams = AxisArray([params...], Axis{:parameters}(names))
     plotsize=(1700, 800)
     # try
         length(paramobs) > 0 || return plot()
@@ -73,15 +70,16 @@ function make_plot(model, varobs, stateobs, paramobs, fluxobs, tstop)
         end
         timeplots = plot(solplot1, solplot2, dataplots..., fluxplots..., layout=Plots.GridLayout(2+length(dataplots)+length(fluxplots), 1))
 
-        # tempplot = plot(x -> ustrip(tempcorr(x * 1.0u"°C", m.shared.tempcorr)), 0.0:1.0:50.0, legend=false, ylabel="Correction", xlabel="°C")
+        tempplot = plot(x -> ustrip(tempcorr(x * 1.0u"°C", m.shared.tempcorr)), 0.0:1.0:50.0, legend=false, ylabel="Correction", xlabel="°C")
         # scaleplots = plot_scaling.(m.params)
         # photoplot = plot(x -> photo(organs[1], state[1], x), 0:10:4000, ylabel="C uptake", xlabel="Irradiance")
-        # funcplots = plot(tempplot, scaleplots..., photoplot, layout=Plots.GridLayout(2 + length(scaleplots), 1))
+        subplots = (tempplot,)# scaleplots..., photoplot)
+        funcplots = plot(subplots, layout=Plots.GridLayout(2 + length(subplots), 1))
 
         l = Plots.GridLayout(1, 2)
         l[1, 1] = GridLayout(1, 1, width=0.8pct)
         l[1, 2] = GridLayout(1, 1, width=0.2pct)
-        plot(timeplots, size=plotsize) #, layout=l, fmt = :png
+        plot(timeplots, funcplots, size=plotsize, layout=l)
     # catch err
         # plot(xlabel="model run failed", size=plotsize)
     # end
@@ -144,8 +142,8 @@ build_model(params, rate, mat, rej, trans, scaling, allometry, assim1, assim2, t
 end
 
 function muxapp(req) # an "App" takes a request, returns the output
-    env = nothing #load_environment()
-    emptyplot = plot()
+    env = load_environment()
+    envobs = Observable{Any}(env);
 
     tstop = slider(20:9999, label="Timespan")
     reload = button("Reload")
@@ -163,9 +161,9 @@ function muxapp(req) # an "App" takes a request, returns the output
     dropbox = vbox(hbox(tstop, reload, paramsdrop, ratedrop, maturitydrop, rejectiondrop, translocationdrop),
                    hbox(scalingdrop, allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop))
 
-    modelobs = Observable{Any}(DynamicEnergyBudgets.PlantCN(environment=env, time=tspan))
+    modelobs = Observable{Any}(DynamicEnergyBudgets.PlantCN(environment=envobs[], time=tspan))
     map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, ratedrop, maturitydrop, rejectiondrop, translocationdrop, scalingdrop,
-                                                         allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop)))..., env)
+                                                         allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop)))..., envobs)
     on(observe(reload)) do x
         model = build_model(paramsdrop[], ratedrop[], maturitydrop[], rejectiondrop[], translocationdrop[], scalingdrop[],
                             allometrydrop[], assimdrop1[], assimdrop2[], tempdrop[], feedbackdrop[], env)
@@ -175,6 +173,7 @@ function muxapp(req) # an "App" takes a request, returns the output
         end
     end
 
+    emptyplot = plot()
     plt = Observable{typeof(emptyplot)}(emptyplot);
 
     paramsliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
@@ -233,8 +232,7 @@ function muxapp(req) # an "App" takes a request, returns the output
     modelobs[] = DynamicEnergyBudgets.Plant(time=tspan);
     observe(paramsliders[][5])[] = 0.45699
 
-    # modelbox = hbox("Model: ", noenv, plantcne, plantcn, no_maturity, constantcn, constantcne, fvcbplant)
-    ui = vbox(plt, dropbox, fluxbox, varbox, parambox, statebox);
+    ui = vbox(dropbox, plt, fluxbox, varbox, parambox, statebox);
 end
 
 state_slider(label, val) =
@@ -250,34 +248,10 @@ arrange_grid(a) = hbox((vbox(a[:,col]...) for col in 1:size(a, 2))...)
 
 observe_grid(a) = map((t...) -> [t[i + size(a,1) * (j - 1)] for i in 1:size(a,1), j in 1:size(a,2)], observe.(a)...)
 
-using ProfileView
-Profile.clear()
-
 ui = muxapp(nothing)
 w = Window(Dict("webPreferences"=>Dict("zoomFactor"=>0.6)));
 Blink.AtomShell.@dot w webContents.setZoomFactor(0.6)
 body!(w, ui);
 # opentools(w)
 
-# @profile for i in 1:10 make_plot(a, (true), flatten(a), (), 1000) end
-# ProfileView.view()
-
-# a(similar(u12), u12, nothing, 1)
 # webio_serve(page("/", req -> muxapp(req)), 8000)
-
-# function accordian(parambox)
-#  dom"div"(
-#   dom"section[class=accordions]"(
-#       dom"article[class=accordion is-active]"(
-#           dom"div[class=accordion-header toggle]"( "Sliders"),
-#           dom"div[class=accordion-body]"(
-#              dom"div[class=accordion-content]"(parambox))),
-#       dom"article[class=accordion]"(
-#           dom"div[class=accordion-header]"("Plots"),
-#           dom"div[class=accordion-body]"(
-#               dom"div[class=accordion-content]"(
-#                  "content")))),
-#     )
-# end
-
-# @ji w "var accordions = bulmaAccordion.attach();"
