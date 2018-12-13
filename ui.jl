@@ -2,8 +2,8 @@ using Revise
 using Unitful
 using UnitlessFlatten
 using OrdinaryDiffEq
-using DynamicEnergyBudgets
 using Photosynthesis
+using DynamicEnergyBudgets
 using InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil
 using Mux
 using FieldMetadata
@@ -16,7 +16,7 @@ using PlotNested
 # using StatPlots
 import Plots:px, pct, GridLayout
 import InteractBase: WidgetTheme, libraries
-using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, scaling, define_organs, photosynthesis, split_state
+using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, calc_scaling, define_organs, photosynthesis, split_state
 using Profile
 
 dir = "/home/raf/julia/DynamicEnergyBudgets/scratch/"
@@ -40,14 +40,14 @@ init_state(::NTuple{3,ParamsCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4,
 init_state(::NTuple{3,ParamsCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
 
 photo(o, u, x) = begin
-    update_photovars(o.vars.assimilation, x)
-    ustrip(photosynthesis(o.params.assimilation, o, u))
+    update_photovars(o.vars.assimilation_vars, x)
+    ustrip(photosynthesis(assimilation_pars(o), o, u))
 end
 
 update_photovars(v::CarbonVars, x) = v.J_L_F = x * oneunit(v.J_L_F)
 update_photovars(v::Photosynthesis.PhotoVars, x) = v.par = x * oneunit(v.par)
 
-function make_plot(model, varobs, stateobs, paramobs, fluxobs, timespan)
+function make_plot(model, varobs, stateobs, paramobs, fluxobs, tstop)
     # namedparams = AxisArray([params...], Axis{:parameters}(names))
     plotsize=(1700, 800)
     # try
@@ -57,19 +57,19 @@ function make_plot(model, varobs, stateobs, paramobs, fluxobs, timespan)
         o = organs[1]
         u = stateobs
         state = split_state(organs, u, 0)
-        dataplots = plot_selected(model, varobs, 1:timespan)
-        prob = DiscreteProblem(m, u, (1, timespan))
+        dataplots = plot_selected(model, varobs, 1:tstop)
+        prob = DiscreteProblem(m, u, (1, tstop))
         sol = solve(prob, FunctionMap(scale_by_time = true))
         solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, labels=reshape(statelabels[1:6], 1, 6), ylabel="State (CMol)",
-                      xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation).name, " - time (hr)"))
+                      xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
         solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, labels=reshape(statelabels[7:12], 1, 6), ylabel="State (CMol)",
-                      xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation).name, " - time (hr)"))
+                      xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
         fluxplots = []
         if length(fluxobs) > 0
-            plot_fluxes!(fluxplots, fluxobs[1], m.records[1].J, 1:timespan)
-            plot_fluxes!(fluxplots, fluxobs[2], m.records[1].J1, 1:timespan)
-            plot_fluxes!(fluxplots, fluxobs[3], m.records[2].J, 1:timespan)
-            plot_fluxes!(fluxplots, fluxobs[4], m.records[2].J1, 1:timespan)
+            plot_fluxes!(fluxplots, fluxobs[1], m.records[1].J, 1:tstop)
+            plot_fluxes!(fluxplots, fluxobs[2], m.records[1].J1, 1:tstop)
+            plot_fluxes!(fluxplots, fluxobs[3], m.records[2].J, 1:tstop)
+            plot_fluxes!(fluxplots, fluxobs[4], m.records[2].J1, 1:tstop)
         end
         timeplots = plot(solplot1, solplot2, dataplots..., fluxplots..., layout=Plots.GridLayout(2+length(dataplots)+length(fluxplots), 1))
 
@@ -87,7 +87,7 @@ function make_plot(model, varobs, stateobs, paramobs, fluxobs, timespan)
     # end
 end
 
-plot_scaling(p) = plot(x -> ustrip(scaling(p.scaling, x * 1.0u"mol")), 0.0:0.01:100.0,
+plot_scaling(p) = plot(x -> ustrip(calc_scaling(p.scaling_pars, x * 1.0u"mol")), 0.0:0.01:100.0,
                        legend=false, ylabel="Correction", xlabel="CMols Stucture")
 
 plot_fluxes!(plots, obs, J, tspan) = begin
@@ -133,12 +133,12 @@ end
 allsubtypes(t::Tuple{X,Vararg}) where X = (allsubtypes(t[1])..., allsubtypes(Base.tail(t))...,)
 allsubtypes(::Tuple{}) = ()
 
-build_model(params, mat, rej, trans, scaling, allometry, assim, temp, feedback, env) = begin
-    pkwargs = (maturity=mat(), rejection=rej(), translocation=trans(),
-              scaling=scaling(), allometry=allometry())
-    p1 = params(;pkwargs..., assimilation=ConstantCAssim())
-    p2 = params(;pkwargs..., assimilation=ConstantNAssim())
-    sh = SharedParams(tempcorr=temp(), feedback=feedback())
+build_model(params, rate, mat, rej, trans, scaling, allometry, assim1, assim2, temp, feedback, env) = begin
+    pkwargs = (maturity_pars=mat(), rate_formula=rate(), rejection_pars=rej(), trans_pars=trans(),
+              scaling_pars=scaling(), allometry_pars=allometry())
+    p1 = params(;pkwargs..., assimilation_pars=assim1())
+    p2 = params(;pkwargs..., assimilation_pars=assim2())
+    sh = SharedParams(tempcorr_pars=temp(), feedback_pars=feedback())
     Organism(params=(p1, p2), shared=sh, environment=env, time=tspan,
              vars=(DynamicEnergyBudgets.ShootVars(), DynamicEnergyBudgets.RootVars()))
 end
@@ -147,26 +147,28 @@ function muxapp(req) # an "App" takes a request, returns the output
     env = nothing #load_environment()
     emptyplot = plot()
 
-    timespan = slider(20:9999, label="Timespan")
+    tstop = slider(20:9999, label="Timespan")
     reload = button("Reload")
     paramsdrop = dropdown([Nothing, allsubtypes(AbstractParams)...], label="Params")
+    ratedrop = dropdown([Nothing, allsubtypes(AbstractRate)...], label="Rate")
     maturitydrop = dropdown([Nothing, allsubtypes(AbstractMaturity)...], label="Maturity")
     rejectiondrop = dropdown([Nothing, allsubtypes(AbstractRejection)...], label="Rejection")
     translocationdrop = dropdown([Nothing, allsubtypes(AbstractTranslocation)...], label="Translocation")
     scalingdrop = dropdown([Nothing, allsubtypes(AbstractScaling)...], label="Scaling")
     allometrydrop = dropdown([Nothing, allsubtypes(AbstractAllometry)...], label="Allometry")
-    assimilationdrop = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
+    assimdrop1 = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
+    assimdrop2 = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
     tempdrop = dropdown([Nothing, allsubtypes(AbstractTempCorr)...], label="Temp Correction")
     feedbackdrop = dropdown([Nothing, allsubtypes(AbstractStateFeedback)...], label="State Feedback")
-    dropbox = hbox(timespan, reload, paramsdrop, maturitydrop, rejectiondrop, 
-                   translocationdrop, scalingdrop, allometrydrop, assimilationdrop, tempdrop, feedbackdrop)
+    dropbox = vbox(hbox(tstop, reload, paramsdrop, ratedrop, maturitydrop, rejectiondrop, translocationdrop),
+                   hbox(scalingdrop, allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop))
 
     modelobs = Observable{Any}(DynamicEnergyBudgets.PlantCN(environment=env, time=tspan))
-    map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, maturitydrop, rejectiondrop, translocationdrop, scalingdrop,
-                                                         allometrydrop, assimilationdrop, tempdrop, feedbackdrop)))..., env)
+    map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, ratedrop, maturitydrop, rejectiondrop, translocationdrop, scalingdrop,
+                                                         allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop)))..., env)
     on(observe(reload)) do x
-        model = build_model(paramsdrop[], maturitydrop[], rejectiondrop[], translocationdrop[], scalingdrop[],
-                            allometrydrop[], assimilationdrop[], tempdrop[], feedbackdrop[], env)
+        model = build_model(paramsdrop[], ratedrop[], maturitydrop[], rejectiondrop[], translocationdrop[], scalingdrop[],
+                            allometrydrop[], assimdrop1[], assimdrop2[], tempdrop[], feedbackdrop[], env)
         params = flatten(model)
         for (i, p) in enumerate(paramsliders[])
             p[] = params[i]
@@ -221,7 +223,7 @@ function muxapp(req) # an "App" takes a request, returns the output
     map!(make_varchecks, varchecks, modelobs)
     map!(make_statesliders, statesliders, modelobs)
     map!(make_paramsliders, paramsliders, modelobs)
-    map!(make_plot, plt, modelobs, varobs, stateobs, paramobs, fluxobs, throttle(0.3, observe(timespan)))
+    map!(make_plot, plt, modelobs, varobs, stateobs, paramobs, fluxobs, throttle(0.3, observe(tstop)))
 
 
     map!(c -> hbox(c...), varbox, varchecks)

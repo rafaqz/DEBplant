@@ -3,7 +3,7 @@ using DynamicEnergyBudgets
 using Unitful
 using Flatten
 using OrdinaryDiffEq
-using DifferentialEquations
+# using DifferentialEquations
 
 using Plots
 
@@ -27,9 +27,9 @@ du = [0.0 for i in 1:12]
 u = [0.0, 1e-2, 0.0, 1e-2, 1e-2, 1e-2, 0.0, 1e-2, 0.0, 1e-2, 1e-2, 10.0]
 organism = DynamicEnergyBudgets.Plant();
 values = flatten(Vector, organism)
-fnames = metaflatten(Vector, organism, fieldname_meta)
-vn = AxisArray(values, Axis{:parameters}(fnames))
-jacobianF = ForwardDiff.jacobian(p1->organism(du, u, p1, 1), flatten(Vector, organism))
+fnames = fieldnameflatten(Vector, organism)
+# vn = AxisArray(values, Axis{:parameters}(fnames))
+# jacobianF = ForwardDiff.jacobian(p1->organism(du, u, p1, 1), flatten(Vector, organism))
 
 organism = DynamicEnergyBudgets.Plant();
 # organism = DynamicEnergyBudgets.FvCBPlant();
@@ -71,8 +71,6 @@ t = 0u"hr":1u"hr":8760u"hr"
 # const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
 
 organism = DynamicEnergyBudgets.Plant(time=t);
-typeof(reconstruct(organism, flatten(Tuple, organism)))
-typeof(reconstruct(organism, flatten(Vector, organism)))
 organism = DynamicEnergyBudgets.Plant(environment=env2, time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
