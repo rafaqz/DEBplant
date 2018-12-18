@@ -1,30 +1,15 @@
+using Revise
+using TypedTables
+using Microclimate
+using DataFrames
+using JLD2
+
 function load_environment()
-    # using IndexedTables
-    environment = load(joinpath(dir, "environment.jld"))["environment"]
-    # environment = nichemap_global("Adelaide", years=10)
-    Microclimate.MicroclimateTable(
-      Table(environment.soil),
-      Table(environment.shadsoil),
-      Table(environment.metout),
-      Table(environment.shadmet),
-      Table(environment.soilmoist),
-      Table(environment.shadmoist),
-      Table(environment.humid),
-      Table(environment.shadhumid),
-      Table(environment.soilpot),
-      Table(environment.shadpot),
-      Table(environment.plant),
-      Table(environment.shadplant),
-      environment.RAINFALL,
-      environment.dim,
-      environment.ALTT,
-      environment.REFL,
-      environment.MAXSHADES,
-      environment.longlat,
-      environment.nyears,
-      environment.timeinterval,
-      environment.minshade,
-      environment.maxshade,
-      environment.DEP,
-    )
+    @load "environment.jld"
+    env
 end
+
+# using NicheMap
+# env = nichemap_global([144, -37]; years=10) 
+# env = convert(MicroclimateTables, env)
+# @save "environment.jld" env

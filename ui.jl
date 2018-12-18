@@ -11,8 +11,10 @@ using Plots, UnitfulPlots, PlotNested
 # using StatPlots
 import Plots:px, pct, GridLayout
 import InteractBase: WidgetTheme, libraries
-using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, calc_scaling, define_organs, photosynthesis, split_state
+using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, calc_scaling, define_organs,
+      photosynthesis, split_state, HasCN, HasCNE, has_reserves
 
+include("hide.jl")
 include("environment.jl")
 
 # dir = "/home/raf/julia/DynamicEnergyBudgets/scratch/"
@@ -27,15 +29,15 @@ plotly()
 # pyplot()
 
 
-const tspan = 0:1:10000
+const tspan = 0:1:17520
 const statelabels = vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])
 
-init_state(model) = init_state(model.params)
-init_state(modelobs::Observable) = init_state(modelobs[].params)
-init_state(::NTuple{2,ParamsCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 2, 0.0]
-init_state(::NTuple{2,ParamsCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
-init_state(::NTuple{3,ParamsCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 10, 0.0]
-init_state(::NTuple{3,ParamsCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
+init_state(modelobs::Observable) = init_state(modelobs[])
+init_state(model) = init_state(has_reserves.(model.organs))
+init_state(::NTuple{2,HasCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 2, 0.0]
+init_state(::NTuple{2,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
+init_state(::NTuple{3,HasCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 10, 0.0]
+init_state(::NTuple{3,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
 
 photo(o, u, x) = begin
     update_photovars(o.vars.assimilation_vars, x)
@@ -50,6 +52,7 @@ function make_plot(model, varobs, stateobs, paramobs, fluxobs, tstop)
     # try
         length(paramobs) > 0 || return plot()
         m = reconstruct(model, paramobs)
+        m.dead[] = false
         organs = define_organs(m, 1)
         o = organs[1]
         u = stateobs
@@ -57,10 +60,13 @@ function make_plot(model, varobs, stateobs, paramobs, fluxobs, tstop)
         dataplots = plot_selected(model, varobs, 1:tstop)
         prob = DiscreteProblem(m, u, (1, tstop))
         sol = solve(prob, FunctionMap(scale_by_time = true))
-        solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, labels=reshape(statelabels[1:6], 1, 6), ylabel="State (CMol)",
-                      xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
-        solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, labels=reshape(statelabels[7:12], 1, 6), ylabel="State (CMol)",
-                      xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
+        background_color = m.dead[] ? :red : :white
+        solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
+                        labels=reshape(statelabels[1:6], 1, 6), ylabel="State (CMol)",
+                        xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
+        solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, background_color=background_color,
+                        labels=reshape(statelabels[7:12], 1, 6), ylabel="State (CMol)",
+                        xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
         fluxplots = []
         if length(fluxobs) > 0
             plot_fluxes!(fluxplots, fluxobs[1], m.records[1].J, 1:tstop)
@@ -70,16 +76,17 @@ function make_plot(model, varobs, stateobs, paramobs, fluxobs, tstop)
         end
         timeplots = plot(solplot1, solplot2, dataplots..., fluxplots..., layout=Plots.GridLayout(2+length(dataplots)+length(fluxplots), 1))
 
-        tempplot = plot(x -> ustrip(tempcorr(x * 1.0u"°C", m.shared.tempcorr)), 0.0:1.0:50.0, legend=false, ylabel="Correction", xlabel="°C")
+        tempplot = plot(x -> ustrip(tempcorr(x*u"°C", m.shared.tempcorr_pars)), 0.0:1.0:50.0, legend=false, ylabel="Correction", xlabel="°C")
         # scaleplots = plot_scaling.(m.params)
         # photoplot = plot(x -> photo(organs[1], state[1], x), 0:10:4000, ylabel="C uptake", xlabel="Irradiance")
-        subplots = (tempplot,)# scaleplots..., photoplot)
-        funcplots = plot(subplots, layout=Plots.GridLayout(2 + length(subplots), 1))
+        subplots = (tempplot,)## scaleplots..., photoplot)
+        funcplots = plot(subplots..., layout=Plots.GridLayout(length(subplots), 1))
 
         l = Plots.GridLayout(1, 2)
         l[1, 1] = GridLayout(1, 1, width=0.8pct)
         l[1, 2] = GridLayout(1, 1, width=0.2pct)
         plot(timeplots, funcplots, size=plotsize, layout=l)
+        plot(timeplots, size=plotsize)
     # catch err
         # plot(xlabel="model run failed", size=plotsize)
     # end
@@ -131,12 +138,13 @@ end
 allsubtypes(t::Tuple{X,Vararg}) where X = (allsubtypes(t[1])..., allsubtypes(Base.tail(t))...,)
 allsubtypes(::Tuple{}) = ()
 
-build_model(params, rate, mat, rej, trans, scaling, allometry, assim1, assim2, temp, feedback, env) = begin
-    pkwargs = (maturity_pars=mat(), rate_formula=rate(), rejection_pars=rej(), trans_pars=trans(),
-              scaling_pars=scaling(), allometry_pars=allometry())
+build_model(params, su, rate, prod, mat, rej, trans, scaling, allometry, assim1, assim2, temp, feedback, env) = begin
+    pkwargs = (maturity_pars=mat(), rate_formula=rate(), production_pars=prod(), 
+               rejection_pars=rej(), trans_pars=trans(),
+               scaling_pars=scaling(), allometry_pars=allometry())
     p1 = params(;pkwargs..., assimilation_pars=assim1())
-    p2 = params(;pkwargs..., assimilation_pars=assim2())
-    sh = SharedParams(tempcorr_pars=temp(), feedback_pars=feedback())
+    p2 = params(;deepcopy(pkwargs)..., assimilation_pars=assim2())
+    sh = SharedParams(su_pars=su(), tempcorr_pars=temp(), feedback_pars=feedback())
     Organism(params=(p1, p2), shared=sh, environment=env, time=tspan,
              vars=(DynamicEnergyBudgets.ShootVars(), DynamicEnergyBudgets.RootVars()))
 end
@@ -145,27 +153,33 @@ function muxapp(req) # an "App" takes a request, returns the output
     env = load_environment()
     envobs = Observable{Any}(env);
 
-    tstop = slider(20:9999, label="Timespan")
+    tstop = slider(20:tspan.stop, label="Timespan")
     reload = button("Reload")
+    controlbox = hbox(tstop, reload)
+
     paramsdrop = dropdown([Nothing, allsubtypes(AbstractParams)...], label="Params")
-    ratedrop = dropdown([Nothing, allsubtypes(AbstractRate)...], label="Rate")
+    sudrop = dropdown([allsubtypes(AbstractSU)...], value=ParallelComplementarySU, label="SU")
+    ratedrop = dropdown([allsubtypes(AbstractRate)...], label="Rate")
+    productiondrop = dropdown([Nothing, allsubtypes(AbstractProduction)...], label="Production")
     maturitydrop = dropdown([Nothing, allsubtypes(AbstractMaturity)...], label="Maturity")
-    rejectiondrop = dropdown([Nothing, allsubtypes(AbstractRejection)...], label="Rejection")
+    rejectiondrop = dropdown([Nothing, allsubtypes(AbstractRejection)...], value=LosslessRejection, label="Rejection")
     translocationdrop = dropdown([Nothing, allsubtypes(AbstractTranslocation)...], label="Translocation")
     scalingdrop = dropdown([Nothing, allsubtypes(AbstractScaling)...], label="Scaling")
     allometrydrop = dropdown([Nothing, allsubtypes(AbstractAllometry)...], label="Allometry")
-    assimdrop1 = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
-    assimdrop2 = dropdown([Nothing, allsubtypes(AbstractAssim)...], label="Assimilation")
+    assimdrop1 = dropdown([Nothing, allsubtypes(AbstractAssim)...], value=ConstantCAssim, label="Assimilation")
+    assimdrop2 = dropdown([Nothing, allsubtypes(AbstractAssim)...], value=ConstantNAssim, label="Assimilation")
     tempdrop = dropdown([Nothing, allsubtypes(AbstractTempCorr)...], label="Temp Correction")
     feedbackdrop = dropdown([Nothing, allsubtypes(AbstractStateFeedback)...], label="State Feedback")
-    dropbox = vbox(hbox(tstop, reload, paramsdrop, ratedrop, maturitydrop, rejectiondrop, translocationdrop),
+    dropbox = vbox(hbox(paramsdrop, sudrop, ratedrop, productiondrop, maturitydrop, rejectiondrop, translocationdrop),
                    hbox(scalingdrop, allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop))
 
     modelobs = Observable{Any}(DynamicEnergyBudgets.PlantCN(environment=envobs[], time=tspan))
-    map!(build_model, modelobs, throttle.(5, observe.((paramsdrop, ratedrop, maturitydrop, rejectiondrop, translocationdrop, scalingdrop,
-                                                         allometrydrop, assimdrop1, assimdrop2, tempdrop, feedbackdrop)))..., envobs)
+    map!(build_model, modelobs, observe.((paramsdrop, sudrop, ratedrop, productiondrop,
+                                          maturitydrop, rejectiondrop, translocationdrop,
+                                          scalingdrop, allometrydrop, assimdrop1, assimdrop2,
+                                          tempdrop, feedbackdrop))..., envobs)
     on(observe(reload)) do x
-        model = build_model(paramsdrop[], ratedrop[], maturitydrop[], rejectiondrop[], translocationdrop[], scalingdrop[],
+        model = build_model(paramsdrop[], sudrop[], ratedrop[], productiondrop[], maturitydrop[], rejectiondrop[], translocationdrop[], scalingdrop[],
                             allometrydrop[], assimdrop1[], assimdrop2[], tempdrop[], feedbackdrop[], env)
         params = flatten(model)
         for (i, p) in enumerate(paramsliders[])
@@ -229,10 +243,10 @@ function muxapp(req) # an "App" takes a request, returns the output
     map!(s -> spreadwidgets(s), parambox, paramsliders)
     map!(s -> spreadwidgets(s), statebox, statesliders)
 
-    modelobs[] = DynamicEnergyBudgets.Plant(time=tspan);
+    modelobs[] = DynamicEnergyBudgets.PlantCN(time=tspan);
     observe(paramsliders[][5])[] = 0.45699
 
-    ui = vbox(dropbox, plt, fluxbox, varbox, parambox, statebox);
+    ui = vbox(controlbox, dropbox, fluxbox, plt, varbox, parambox, statebox);
 end
 
 state_slider(label, val) =
