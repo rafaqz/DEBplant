@@ -16,11 +16,11 @@ t = 0:1:8760
 # u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
 # const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
 
-organism = DynamicEnergyBudgets.PlantCN(time=t);
-organism = DynamicEnergyBudgets.PlantCN(environment=env, time=t);
+organism = DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr");
+organism = DynamicEnergyBudgets.PlantCN(environment=env, time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
-organism = DynamicEnergyBudgets.FvCBPlant(environment=env2, time=t);
+organism = DynamicEnergyBudgets.FvCBPlant(environment=env, time=t);
 organism(du, u, nothing, 1u"hr")
 organism(du, u, nothing, 1)
 
