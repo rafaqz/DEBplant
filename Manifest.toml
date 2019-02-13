@@ -191,9 +191,9 @@ version = "0.0.4"
 
 [[DiffRules]]
 deps = ["Random", "Test"]
-git-tree-sha1 = "09d69da75967ec48a8b1ad0897ec9144ee052bf9"
+git-tree-sha1 = "26b96a1a506b06cb272ef60568d478adab039b96"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "0.0.8"
+version = "0.0.9"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Printf", "Random", "Statistics", "Test"]
@@ -219,7 +219,7 @@ version = "0.6.0"
 
 [[DynamicEnergyBudgets]]
 deps = ["AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "LinearAlgebra", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Test", "Unitful"]
-git-tree-sha1 = "188381a099a79230cf32e0c69f247f1896e97df6"
+git-tree-sha1 = "798cdb85c99b6b0d0371e56e6b46b6f1881e0320"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
@@ -506,9 +506,9 @@ version = "0.7.0"
 
 [[NLSolversBase]]
 deps = ["Calculus", "DiffEqDiffTools", "DiffResults", "Distributed", "ForwardDiff", "LinearAlgebra", "Random", "SparseArrays", "Test"]
-git-tree-sha1 = "3d58d0970b04c545534c0e70f3d8f12fe429b5e6"
+git-tree-sha1 = "2bd568eda045f5ad2cbd311d71e09d7165ab2bf6"
 uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
-version = "7.2.0"
+version = "7.3.0"
 
 [[NLsolve]]
 deps = ["DiffBase", "DiffEqDiffTools", "Distances", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "Printf", "Reexport", "SparseArrays", "Test"]
@@ -554,9 +554,9 @@ version = "1.0.2"
 
 [[OrdinaryDiffEq]]
 deps = ["DataStructures", "DiffEqBase", "DiffEqDiffTools", "DiffEqOperators", "ExponentialUtilities", "ForwardDiff", "GenericSVD", "InteractiveUtils", "LinearAlgebra", "Logging", "MuladdMacro", "NLsolve", "Parameters", "Printf", "Random", "RecursiveArrayTools", "Reexport", "SparseArrays", "StaticArrays", "Statistics", "Test"]
-git-tree-sha1 = "2b25ecdafa1b16858ecb5e37c158af0d77ac4616"
+git-tree-sha1 = "98353a57e894690fc8b8f21543839ede5c71b87d"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-version = "5.1.0"
+version = "5.1.2"
 
 [[PDMats]]
 deps = ["Arpack", "LinearAlgebra", "SparseArrays", "SuiteSparse", "Test"]
