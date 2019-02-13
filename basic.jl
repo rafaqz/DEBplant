@@ -1,8 +1,4 @@
-using Revise
-using DynamicEnergyBudgets
-using Unitful
-using Flatten
-using OrdinaryDiffEq
+using DynamicEnergyBudgets, Unitful, Flatten, OrdinaryDiffEq, Microclimate
 # using Photosynthesis
 
 du = [0.0 for i in 1:12]u"mol/hr"
@@ -15,20 +11,23 @@ t = 0:1:8760
 # u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 10.0]u"mol"
 # u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
 # const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
+env = environment
 
 organism = DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.PlantCN(environment=env, time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(environment=env, time=t);
-organism(du, u, nothing, 1u"hr")
+organism(du, u, nothing, 10u"hr")
 organism(du, u, nothing, 1)
+length(organism.records[1].vars.rate)
 
-prob = DiscreteProblem(organism, u, (0u"hr", 1000u"hr"))
+prob = DiscreteProblem(uimodel, u, (0u"hr", 1000u"hr"))
 sol = solve(prob, FunctionMap(scale_by_time = true))
 
 plot(sol)
-p = plot(sol.t, sol', size=(1000, 700))
+s = sol'[:, 7:12] .*= -1
+plot(sol.t, sol', size=(1000, 700))
 
 using BenchmarkTools
 Profile.clear()
