@@ -94,7 +94,7 @@ version = "0.5.1"
 
 [[Codify]]
 deps = ["FieldMetadata", "Requires"]
-git-tree-sha1 = "bdc03672f466ab1254bda4226d4c784aab4a0659"
+git-tree-sha1 = "eaa0eb322db06fed2b3cc7cc39c52bf812406c68"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Codify.jl"
 uuid = "67e8a8f0-3181-11e9-0720-1d07a4d049a5"
@@ -345,7 +345,7 @@ version = "0.9.0"
 
 [[InteractBase]]
 deps = ["Base64", "CSSUtil", "Colors", "DataStructures", "Dates", "JSExpr", "JSON", "Knockout", "Observables", "Random", "Test", "WebIO", "Widgets"]
-git-tree-sha1 = "267939f10f2e77bf52a07950199dae8ae8152622"
+git-tree-sha1 = "a366196696c276aa6d655ed129f5f1f0847fef34"
 repo-rev = "master"
 repo-url = "https://github.com/piever/InteractBase.jl"
 uuid = "d3863d7c-f0c8-5437-a7b4-3ae773c01009"
@@ -423,7 +423,9 @@ version = "0.2.0"
 
 [[LabelledArrays]]
 deps = ["InteractiveUtils", "LinearAlgebra", "StaticArrays", "Test"]
-path = "/home/raf/julia/LabelledArrays"
+git-tree-sha1 = "5345d8d7f61b48e4b91977343d6744b4e1776927"
+repo-rev = "sliced2"
+repo-url = "https://github.com/rafaqz/LabelledArrays.jl"
 uuid = "2ee39098-c373-598a-b85f-a56591580800"
 version = "0.4.0+"
 
