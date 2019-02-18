@@ -234,7 +234,9 @@ version = "0.6.0"
 
 [[DynamicEnergyBudgets]]
 deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "LinearAlgebra", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Test", "Unitful"]
-path = "/home/raf/julia/DynamicEnergyBudgets"
+git-tree-sha1 = "6bbb8002262038dcd555774d784d3137b5665421"
+repo-rev = "master"
+repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
 version = "0.0.0"
 
