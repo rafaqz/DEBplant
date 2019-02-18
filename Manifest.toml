@@ -714,6 +714,14 @@ version = "0.7.4"
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
+[[Select]]
+deps = ["FieldMetadata"]
+git-tree-sha1 = "b4e3d0eb61eba72e45e57c6e429f556178d1a143"
+repo-rev = "master"
+repo-url = "https://github.com/rafaqz/Select.jl"
+uuid = "9af9b3ce-3316-11e9-0fa8-7b2e06453de4"
+version = "0.1.0"
+
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
