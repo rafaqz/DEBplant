@@ -204,14 +204,15 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     envdrop = dropdown(app.environments, value=env, label="Environment")
     modeldrop = dropdown(app.models, value=first(values(app.models)), label="Model")
     modelobs = Observable{Any}(first(values(app.models)))
-
+    save = button("Save")
+    savename = textbox(value="modelname", label="Save name")
 
     plottemp = checkbox("Plot TempCorr")
     plotscale = checkbox("Plot Scaling Function")
     plotphoto = checkbox("Plot Photosynthesis")
     plotpot = checkbox("Plot Potential dependence")
 
-    controlbox = hbox(tstoptext, modeldrop, envdrop, envstart, plottemp, plotscale, plotphoto, plotpot)
+    controlbox = hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plottemp, plotscale, plotphoto, plotpot)
 
     reload = button("Reload")
 
@@ -245,6 +246,9 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         reload_model(app, drops)
     end
 
+    on(observe(save)) do x
+        savecode(app, savename[])
+    end
 
     paramsliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
     paramobs = Observable{Vector{Any}}([]);
