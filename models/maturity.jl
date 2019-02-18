@@ -28,7 +28,6 @@ models[:maturity] = Plant(
                 α = 0.1,
             ),
             maturity_pars = Maturity(
-                n_N_M = 0.1,
                 j_E_mat_mai = 0.001u"d^-1",
                 κmat = 0.05,
                 threshold = 10.0u"mol",
