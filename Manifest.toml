@@ -262,7 +262,7 @@ version = "0.0.1+"
 
 [[FieldMetadata]]
 deps = ["Markdown", "REPL", "Test"]
-git-tree-sha1 = "d95c82f48b75a3cd7a670ad63c92298309f95514"
+git-tree-sha1 = "8d7308011ac08b37aeaa9f8f5fa74e2e1ad42a21"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/FieldMetadata.jl"
 uuid = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
@@ -285,11 +285,11 @@ version = "0.5.3"
 
 [[Flatten]]
 deps = ["FieldMetadata", "Requires", "Test"]
-git-tree-sha1 = "96aafff350d4da168256e1224d88ecfcfae65bd5"
+git-tree-sha1 = "94092e60ecc9c35a7f7b6d7273bd96d7f3028ed2"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Flatten.jl"
 uuid = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
-version = "0.1.0"
+version = "0.1.0+"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
@@ -423,9 +423,9 @@ version = "0.2.0"
 
 [[LabelledArrays]]
 deps = ["InteractiveUtils", "LinearAlgebra", "StaticArrays", "Test"]
-git-tree-sha1 = "5345d8d7f61b48e4b91977343d6744b4e1776927"
-repo-rev = "sliced2"
-repo-url = "https://github.com/rafaqz/LabelledArrays.jl"
+git-tree-sha1 = "7f5475f8fa8977cf6e69ecb3cfb5b9f2ba974317"
+repo-rev = "master"
+repo-url = "https://github.com/JuliaDiffEq/LabelledArrays.jl"
 uuid = "2ee39098-c373-598a-b85f-a56591580800"
 version = "0.4.0+"
 
