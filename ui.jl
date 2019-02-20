@@ -1,6 +1,10 @@
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "app.jl"))
 
+# Plot package
+gr() # for faster plotting, maybe?
+plotly() # for zoom and pan
+
 statelabels = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
 
 # Import environments 
@@ -20,7 +24,7 @@ models
 app = ModelApp(models, environments, tspan, statelabels, nothing);
 
 # Electron desktop app
-electronapp(app; zoom=0.6)
+electronapp(app; zoom=0.5)
 
 # Save the code for the current state of the model in the app 
 # It will be loaded automatically the next time this script is run

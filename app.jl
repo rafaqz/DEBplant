@@ -51,26 +51,27 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     model.params = m2.params
     model.shared = m2.shared
     model.records = m2.records
-    # model.environment_start[] = envstart
+    model.environment_start[] = envstart
     model.dead[] = false
 
     app.savedmodel = model
 
-    println("u, tstop: ", (u, tstop))
-    prob = DiscreteProblem(model, u, (oneunit(tstop), tstop))
+    println("u, tstop: ", (ustrip(u), ustrip(tstop)))
+    prob = DiscreteProblem(model, ustrip(u), (one(tstop), ustrip(tstop)))
     sol = solve(prob, FunctionMap(scale_by_time = true))
-    background_color = model.dead[] ? :red : :white
-    # solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
-    #                 labels=reshape(app.statelabels[1:6], 1, 6), ylabel="State (CMol)",
-    #                 xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
-    # solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, background_color=background_color,
-    #                 labels=reshape(app.statelabels[7:12], 1, 6), ylabel="State (CMol)",
-    #                 xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
+    background_color = model.dead[] ? :pink : :white
+    solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
+                    labels=reshape([app.statelabels[1:6]...], 1, 6), ylabel="State (CMol)",
+                    xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
+    solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, background_color=background_color,
+                    labels=reshape([app.statelabels[7:12]...], 1, 6), ylabel="State (CMol)",
+                    xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
     # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
-    s = sol' .* model.shared.core_pars.w_V
-    s1 = s[:, 1:6]
-    s2 = s[:, 7:12]
-    solplot = plot(sol.t, s1, labels=reshape([app.statelabels[1:6]...], 1, 6)), plot(sol.t, s2, labels=reshape([app.statelabels[7:12]...], 1, 6))
+    # s = sol' # .* model.shared.core_pars.w_V
+    # s1 = view(s, :, 1:6)
+    # s2 = s[:, 7:12]
+    # solplot = (plot(sol.t, s1, labels=reshape([app.statelabels[1:6]...], 1, 6)),) 
+    # plot(sol.t, s2, labels=reshape([app.statelabels[7:12]...], 1, 6))
     # if plotarea
     # organs = define_organs(model, 1hr)
     # o = organs[1]
@@ -79,6 +80,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     # else
         # solplot
     # end
+    solplot1, solplot2
 end
 
 
@@ -193,6 +195,9 @@ build_model(params, su, cat, rate, prod, mat, rej, trans, shape, allometry, assi
              vars=(assimvars(assim1()), assimvars(assim2())))
 end
 
+runplotly() = plotly()
+rungr() = gr()
+
 function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
     env = first(values(app.environments))
@@ -204,6 +209,8 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     envdrop = dropdown(app.environments, value=env, label="Environment")
     modeldrop = dropdown(app.models, value=first(values(app.models)), label="Model")
     modelobs = Observable{Any}(first(values(app.models)))
+    gr = button("GR")
+    plotly = button("Plotly")
     save = button("Save")
     savename = textbox(value="modelname", label="Save name")
 
@@ -212,9 +219,13 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     plotphoto = checkbox("Plot Photosynthesis")
     plotpot = checkbox("Plot Potential dependence")
 
-    controlbox = hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plottemp, plotscale, plotphoto, plotpot)
+    controlbox = hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plottemp, plotscale, plotphoto, plotpot, plotly, gr)
 
     reload = button("Reload")
+
+    on(p -> rungr(), observe(gr))
+    on(p -> runplotly(), observe(plotly))
+        
 
     selectables = select(modelobs[])
     drops = []
@@ -268,13 +279,13 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     statebox = Observable{typeof(dom"div"())}(dom"div"());
 
     make_varchecks(model) = begin
-        checks = plotchecks(model.records)
+        checks = PlotNested.plotchecks(model.records)
         map!((x...) -> [x...], varobs, observe.(checks)...)
         checks
     end
 
     make_envchecks(model) = begin
-        checks = plotchecks(model.environment)
+        checks = PlotNested.plotchecks(model.environment)
         map!((x...) -> [x...], envobs, observe.(checks)...)
         checks
     end
@@ -292,16 +303,15 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
             println((l, n, p, a, lg))
             # Use a log range if specified in metadata
             rnge = lg ? vcat(exp10.(range(log10(abs(l[1])), stop=sign(log10(abs(l[2]))) , length=100) * sign(l[2])) * l[2]) : collect(l[1]:(l[2]-l[1])/100:l[2])
-            # rnge = l[1]:(l[2]-l[1])/100:l[2]
             InteractBase.slider(rnge, label=string(n), value=p, attributes=a)
         end
-        map!((x...) -> [x...], paramobs, throttle.(0.2, observe.(sl))...)
+        map!((x...) -> [x...], paramobs, throttle.(0.3, observe.(sl))...)
         sl
     end
 
     make_statesliders(m) = begin
         sl = state_slider.(app.statelabels, init_state(m))
-        map!((x...) -> [x...], stateobs, throttle.(0.2, observe.(sl))...)
+        map!((x...) -> [x...], stateobs, throttle.(0.3, observe.(sl))...)
         sl
     end
 
@@ -309,11 +319,11 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
                   make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
     fluxbox = hbox(arrange_grid.(flux_grids)...)
     fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
-    tstopobs = map(throttle(0.2, observe(tstoptext))) do t
+    tstopobs = map(throttle(0.3, observe(tstoptext))) do t
         int = tryparse(Int, t)
         int == nothing ? 8760hr : int * hr
     end
-    envstartobs = throttle(0.2, observe(envstart))
+    envstartobs = throttle(0.3, observe(envstart))
 
     map!(make_varchecks, varchecks, modelobs)
     map!(make_envchecks, envchecks, modelobs)
@@ -330,7 +340,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
     reload_model(app, drops)
 
-    ui = vbox(controlbox, hbox(reload, dropbox), fluxbox, plotobs, varbox, envbox, parambox, statebox);
+    ui = vbox(hbox(reload, dropbox), controlbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
     # dom"div"()
 end
 
