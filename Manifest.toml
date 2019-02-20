@@ -58,9 +58,9 @@ version = "0.5.3"
 
 [[Blink]]
 deps = ["Base64", "BinDeps", "Distributed", "JSExpr", "JSON", "Lazy", "Libdl", "Logging", "MacroTools", "Mustache", "Mux", "Reexport", "Sockets", "Test", "WebIO", "WebSockets"]
-git-tree-sha1 = "cd169880989669c2d48a72be9a2a691def62e257"
+git-tree-sha1 = "bfa6d8f3b9b246b2595e6f65f7aa4b2c605ff2a5"
 uuid = "ad839575-38b3-5650-b840-f874b8c74a25"
-version = "0.9.0"
+version = "0.10.0"
 
 [[BufferedStreams]]
 deps = ["Compat", "Test"]
@@ -266,14 +266,14 @@ version = "0.2.4"
 
 [[FieldDefaults]]
 deps = ["FieldMetadata", "Setfield"]
-git-tree-sha1 = "2a7e8a0cb59950c06ce088dc6665dec7c41b67bb"
+git-tree-sha1 = "b1409a4d0e059f6aaf99cefb7b835fb56d9b7f26"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/FieldDefaults.jl"
 uuid = "49426c49-986f-5969-8844-d5cc96441cfc"
 version = "0.0.1"
 
 [[FieldMetadata]]
-git-tree-sha1 = "33871ca7fec2c192025eb4c8d010cda6ac1aaf46"
+git-tree-sha1 = "6c4c3cfeafcf38c5943240aabc1275b136db8099"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/FieldMetadata.jl"
 uuid = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
@@ -296,7 +296,7 @@ version = "0.5.3"
 
 [[Flatten]]
 deps = ["FieldMetadata", "Requires"]
-git-tree-sha1 = "12839946193b9829b4488355efdb3e1749453ea6"
+git-tree-sha1 = "4fd73f76ae2ef0d89666d8c98d0797016debaf8b"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Flatten.jl"
 uuid = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
@@ -304,9 +304,9 @@ version = "0.1.0"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
-git-tree-sha1 = "e393bd3b9102659fb24fe88caedec41f2bc2e7de"
+git-tree-sha1 = "4c4d727f1b7e0092134fabfab6396b8945c1ea5b"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.2"
+version = "0.10.3"
 
 [[FunctionalCollections]]
 deps = ["Test"]
@@ -537,7 +537,7 @@ version = "0.3.0"
 
 [[Microclimate]]
 deps = ["NCDatasets", "Test", "Unitful"]
-git-tree-sha1 = "7afcee82883e3459b01fe1082516dc9968c41b2d"
+git-tree-sha1 = "afdec68baaebdcc18d6b3b5ad655d9e55eb6ae64"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Microclimate.jl"
 uuid = "e0eb800d-4a9f-54ae-b0f8-217228d9d7c3"
@@ -797,7 +797,7 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[Select]]
 deps = ["FieldMetadata"]
-git-tree-sha1 = "b4e3d0eb61eba72e45e57c6e429f556178d1a143"
+git-tree-sha1 = "8fb9969d5059361ed280c7326c3635a8d46f262e"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Select.jl"
 uuid = "9af9b3ce-3316-11e9-0fa8-7b2e06453de4"
@@ -969,9 +969,9 @@ version = "0.7.0"
 
 [[WebSockets]]
 deps = ["Base64", "Dates", "Distributed", "HTTP", "Logging", "MbedTLS", "Random", "Sockets", "Test"]
-git-tree-sha1 = "86d48ad45a897278723b060134d26545e19d0ac2"
+git-tree-sha1 = "88a3850a69cf8071d871ce08735f41799461dd54"
 uuid = "104b5d7c-a370-577a-8038-80a2059c5097"
-version = "1.2.0"
+version = "1.3.0"
 
 [[Widgets]]
 deps = ["Colors", "Dates", "Observables", "OrderedCollections", "Test"]
