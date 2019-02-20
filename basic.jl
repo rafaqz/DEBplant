@@ -1,3 +1,4 @@
+using Revise
 using DynamicEnergyBudgets, Unitful
 using Flatten, OrdinaryDiffEq, Microclimate
 
@@ -30,7 +31,7 @@ DynamicEnergyBudgets.update_height!(DynamicEnergyBudgets.Allometry(), o, ux[1])
 DynamicEnergyBudgets.update_height!(DynamicEnergyBudgets.FixedAllometry(), o, ux[1])
 DynamicEnergyBudgets.update_height!(DynamicEnergyBudgets.SqrtAllometry(), o, ux[1])
 
-prob = DiscreteProblem(uimodel, u, (0u"hr", 1000u"hr"))
+prob = DiscreteProblem(organism, u, (0u"hr", 1000u"hr"))
 sol = solve(prob, FunctionMap(scale_by_time = true))
 
 plot(sol)
