@@ -24,6 +24,10 @@ function prof(organism, u; maxdepth=40, view=false)
     end
 end
 
+Profile.clear()
+@profile MicroclimPoint(envgrid, CartesianIndex(56, 53))
+ProfileView.view()
+
 prof(organism, u; view = true)
 # Profile.print(format=:flat)
 
