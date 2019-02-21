@@ -46,6 +46,7 @@ end
 update_photovars(v::Photosynthesis.PhotoVars, x) = v.par = x * oneunit(v.par)
 
 function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVector, tstop::Number, envstart::Number, app)
+
     length(params) > 0 || return (plot(), plot())
     m2 = ulreconstruct(model, params)
 
@@ -59,7 +60,12 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
 
     println("u, tstop: ", (ustrip(u), ustrip(tstop)))
     prob = DiscreteProblem(model, ustrip(u), (one(tstop), ustrip(tstop)))
-    sol = solve(prob, FunctionMap(scale_by_time = true))
+    local sol
+    try
+        sol = solve(prob, FunctionMap(scale_by_time = true))
+    catch
+        return plot(), plot()
+    end
     background_color = model.dead[] ? :pink : :white
     solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
                     labels=reshape([STATELABELS[1:6]...], 1, 6), ylabel="State (CMol)",
@@ -89,9 +95,6 @@ function make_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractV
                    plottemp::Bool, plotscale::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number)
     plotsize=(1700, 800)
 
-    if length(params) > 0
-        model = ulreconstruct(model, params)
-    end
     envstart = model.environment_start[]
     tspan = 1:ustrip(tstop)
     varplots = plot_selected(model.records, vars, tspan)
@@ -201,6 +204,7 @@ rungr() = gr()
 
 function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
+    throt = 0.4
     env = first(values(app.environments))
     envobs = Observable{Any}(env);
 
@@ -251,7 +255,6 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         modelobs[] = updateselected(modelobs[], getindex.(drops))
         modelobs[].environment = envdrop[]
         app.savedmodel = modelobs[]
-        # plotobs[] = make_plot(modelobs[], varobs[], stateobs[], paramobs[], fluxobs[], observe(tstop)[])
     end
 
     on(observe(reload)) do x
@@ -282,12 +285,14 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     make_varchecks(model) = begin
         checks = PlotNested.plotchecks(model.records)
         map!((x...) -> [x...], varobs, observe.(checks)...)
+        varobs[] = [c[] for c in checks]
         checks
     end
 
     make_envchecks(model) = begin
         checks = PlotNested.plotchecks(model.environment)
         map!((x...) -> [x...], envobs, observe.(checks)...)
+        envobs[] = [c[] for c in checks]
         checks
     end
 
@@ -306,13 +311,17 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
             rnge = lg ? vcat(exp10.(range(log10(abs(l[1])), stop=sign(log10(abs(l[2]))) , length=100) * sign(l[2])) * l[2]) : collect(l[1]:(l[2]-l[1])/100:l[2])
             InteractBase.slider(rnge, label=string(n), value=p, attributes=a)
         end
-        map!((x...) -> [x...], paramobs, throttle.(0.3, observe.(sl))...)
+        map!((x...) -> [x...], paramobs, throttle.(throt, observe.(sl))...)
+        paramobs[] = [s[] for s in sl]
+
+        solplotobs[] = sol_plot(modelobs[], paramobs[], stateobs[], tstopobs[], envstartobs[], app)
         sl
     end
 
     make_statesliders(m) = begin
         sl = state_slider.(STATELABELS, init_state(m))
-        map!((x...) -> [x...], stateobs, throttle.(0.3, observe.(sl))...)
+        map!((x...) -> [x...], stateobs, throttle.(throt, observe.(sl))...)
+        stateobs[] = [s[] for s in sl]
         sl
     end
 
@@ -320,18 +329,20 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
                   make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
     fluxbox = hbox(arrange_grid.(flux_grids)...)
     fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
-    tstopobs = map(throttle(0.3, observe(tstoptext))) do t
+    tstopobs = map(throttle(throt, observe(tstoptext))) do t
         int = tryparse(Int, t)
         int == nothing ? 8760hr : int * hr
     end
-    envstartobs = throttle(0.3, observe(envstart))
+    envstartobs = throttle(throt, observe(envstart))
 
     map!(make_varchecks, varchecks, modelobs)
     map!(make_envchecks, envchecks, modelobs)
     map!(make_statesliders, statesliders, modelobs)
     map!(make_paramsliders, paramsliders, modelobs)
-    map!(sol_plot, solplotobs, modelobs, paramobs, stateobs, tstopobs, envstartobs, app)
-    map!(make_plot, plotobs, modelobs, paramobs, stateobs, solplotobs, varobs, envobs, fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs)
+
+    map!(sol_plot, solplotobs, modelobs[], paramobs, stateobs, tstopobs, envstartobs, app)
+    map!(make_plot, plotobs, modelobs[], paramobs, stateobs, solplotobs, varobs, envobs, 
+         fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs)
 
     map!(c -> vbox(hbox(c...)), varbox, varchecks)
     halfenv = min(12, length(envchecks[]))
@@ -339,14 +350,14 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(s -> spreadwidgets(s), parambox, paramsliders)
     map!(s -> spreadwidgets(s), statebox, statesliders)
 
-    reload_model(app, drops)
+    modelobs[] = modeldrop[]
 
     ui = vbox(hbox(reload, dropbox), controlbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
     # dom"div"()
 end
 
 state_slider(label, val) =
-    slider(vcat(exp10.(range(-4, stop = 1, length = 100))) * mol, label=label, value=val)
+    slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=label, value=val)
 
 make_grid(rownames, colnames) = begin
     rows = length(rownames)
