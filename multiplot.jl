@@ -1,11 +1,14 @@
-using JLD2, LabelledArrays, DynamicEnergyBudgets
-using UnitfulPlots
-using Unitful: hr, d
+using Revise, LabelledArrays, DynamicEnergyBudgets, OrdinaryDiffEq, Unitful
+using Plots, UnitfulPlots
+using Unitful: hr, d, mol, g, mg
+
+dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
+include(joinpath(dir, "load.jl"))
 
 const month_hours = 365.25 / 12 * 24hr 
 
 import Base: round
-round(::Type{T}, x::Quantity) where {T<:Quantity} = T(($f)(typeof(one(T)), uconvert(unit(T), x).val))
+round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val))
 
 function solplot!(plt, model, u, envstart)
     model.dead[] = false
@@ -38,58 +41,60 @@ function multiplot(title, model, u, envstart)
     end
     plot(plt, plot_title=title, xlab="Time in hours", ylab="Structural biomass in grams (roots shown as negative)", 
          legend=:none, size=(1200,800), dpi=300)
-    savefig(title)
-    return nothing
+    # savefig(title)
+    # return nothing
 end
 
-dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
-include(joinpath(dir, "app.jl"))
+gr()
 
 environments, _ = loadenvironments(dir)
-models = loadsavedmodels(dir)
-model = models[:init]
+models = OrderedDict()
+modeldir = joinpath(dir, "models")
+include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 
-u = zeros(12)g
+u = zeros(12)mol
 labels = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
-ulabelled = LVector{eltype(u),typeof(u),labels}(u)
+ulabelled = LArray{labels}(u)
 
 small_seed = copy(ulabelled)
-small_seed.VS = 1e-3mg * 25.0g/mol 
-small_seed.CS = 1e-3mg * 25.0g/mol 
-small_seed.NS = 1e-3mg * 25.0g/mol 
-small_seed.VR = 1e-3mg * 25.0g/mol 
-small_seed.CR = 1.0mg * 25.0g/mol
-small_seed.NR = 0.05mg * 25.0g/mol
+small_seed.VS = 1e-3mg / (25.0g/mol)
+small_seed.CS = 1e-3mg / (25.0g/mol)
+small_seed.NS = 1e-3mg / (25.0g/mol)
+small_seed.VR = 1e-3mg / (25.0g/mol)
+small_seed.CR = 1.0mg  / (25.0g/mol)
+small_seed.NR = 0.05mg / (25.0g/mol)
 small_seed
 
 large_seed = copy(ulabelled)
-large_seed.VS = 1e-1mg * 25.0g/mol 
-large_seed.CS = 1e-1mg * 25.0g/mol 
-large_seed.NS = 1e-1mg * 25.0g/mol 
-large_seed.VR = 1e-1mg * 25.0g/mol 
-large_seed.CR = 100.0mg * 25.0g/mol
-large_seed.NR = 5.0mg * 25.0g/mol
+large_seed.VS = 1e-1mg  / (25.0g/mol) 
+large_seed.CS = 1e-1mg  / (25.0g/mol) 
+large_seed.NS = 1e-1mg  / (25.0g/mol) 
+large_seed.VR = 1e-1mg  / (25.0g/mol) 
+large_seed.CR = 100.0mg / (25.0g/mol)
+large_seed.NR = 5.0mg   / (25.0g/mol)
 large_seed
 
 plant = copy(ulabelled)
-plant.VS = 10g * 25.0g/mol 
-plant.CS = 10g * 25.0g/mol 
-plant.NS = 0.5g * 25.0g/mol 
-plant.VR = 5.0g * 25.0g/mol 
-plant.CR = 5.0mg * 25.0g/mol
-plant.NR = 0.25mg * 25.0g/mol
+plant.VS = 10g    / (25.0g/mol) 
+plant.CS = 10g    / (25.0g/mol) 
+plant.NS = 0.5g   / (25.0g/mol) 
+plant.VR = 5.0g   / (25.0g/mol) 
+plant.CR = 5.0mg  / (25.0g/mol)
+plant.NR = 0.25mg / (25.0g/mol)
 plant
-
-u = seed
 
 envstart = 1.0hr
 
-model.environment = tas
-multiplot("Tasmania_seed", model, seed, envstart)
-multiplot("Tasmania_plant", model, plant, envstart)
-model.environment = desert
-multiplot("Desert_seed", model, seed, envstart)
-multiplot("Desert_plant", model, plant, envstart)
-model.environment = qld
-multiplot("QLD_seed", model, seed, envstart)
-multiplot("QLD_plant", model, plant, envstart)
+model = models[:init];
+model.environment = environments[:tas]
+multiplot("plots/Tasmania_small_seed", model, small_seed, envstart)
+multiplot("plots/Tasmania_large_seed", model, large_seed, envstart)
+multiplot("plots/Tasmania_plant", model, plant, envstart)
+model.environment = environments[:desert]
+multiplot("plots/Desert_small_seed", model, small_seed, envstart)
+multiplot("plots/Desert_large_seed", model, large_seed, envstart)
+multiplot("plots/Desert_plant", model, plant, envstart)
+model.environment = environments[:qld]
+multiplot("plots/QLD_small_seed", model, small_seed, envstart)
+multiplot("plots/QLD_large_seed", model, small_seed, envstart)
+multiplot("plots/QLD_plant", model, plant, envstart)

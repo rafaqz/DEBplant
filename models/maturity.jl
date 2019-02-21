@@ -1,5 +1,5 @@
 models[:maturity] = Plant(
-    environment = tas,
+    environment = environments[:tas],
     params = (
         Params(
             rate_formula = FZeroRate(),

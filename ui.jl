@@ -8,7 +8,9 @@ include(joinpath(dir, "app.jl"))
 environments, tspan = loadenvironments(dir)
 
 # Import models
-models = loadsavedmodels(dir)
+models = OrderedDict()
+modeldir = joinpath(dir, "models")
+include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 
 # Build the app interface
 app = ModelApp(models, environments, tspan, nothing);

@@ -1,12 +1,8 @@
 using Revise, Unitful, Flatten, FieldMetadata, OrdinaryDiffEq
 using InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil, Mux
-using Plots, UnitfulPlots, PlotNested, StatsPlots
-using Photosynthesis, Microclimate, DynamicEnergyBudgets, Codify
+using Plots, UnitfulPlots, StatsPlots, PlotNested
+using Photosynthesis, Microclimate, DynamicEnergyBudgets, Codify, Select
 using DataStructures
-using Select
-
-
-const statelabels = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
 
 import Plots:px, pct, GridLayout
 using Photosynthesis: potential_dependence
@@ -17,7 +13,9 @@ using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, cm, m, s, hr, d, mol, m
 
 using JLD2
 
-mutable struct ModelApp{M,E,T,SL} 
+const STATELABELS = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
+
+mutable struct ModelApp{M,E,T} 
     models::M
     environments::E
     tspan::T
@@ -30,6 +28,7 @@ init_state(::NTuple{2,HasCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.
 init_state(::NTuple{2,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 0.01]mol
 
 include(joinpath(dir, "util/hide.jl"))
+include(joinpath(dir, "load.jl"))
 
 plotly()
 
@@ -63,17 +62,17 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     sol = solve(prob, FunctionMap(scale_by_time = true))
     background_color = model.dead[] ? :pink : :white
     solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
-                    labels=reshape([app.statelabels[1:6]...], 1, 6), ylabel="State (CMol)",
+                    labels=reshape([STATELABELS[1:6]...], 1, 6), ylabel="State (CMol)",
                     xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
     solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, background_color=background_color,
-                    labels=reshape([app.statelabels[7:12]...], 1, 6), ylabel="State (CMol)",
+                    labels=reshape([STATELABELS[7:12]...], 1, 6), ylabel="State (CMol)",
                     xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
     # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
     # s = sol' # .* model.shared.core_pars.w_V
     # s1 = view(s, :, 1:6)
     # s2 = s[:, 7:12]
-    # solplot = (plot(sol.t, s1, labels=reshape([app.statelabels[1:6]...], 1, 6)),) 
-    # plot(sol.t, s2, labels=reshape([app.statelabels[7:12]...], 1, 6))
+    # solplot = (plot(sol.t, s1, labels=reshape([STATELABELS[1:6]...], 1, 6)),) 
+    # plot(sol.t, s2, labels=reshape([STATELABELS[7:12]...], 1, 6))
     # if plotarea
     # organs = define_organs(model, 1hr)
     # o = organs[1]
@@ -312,7 +311,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     end
 
     make_statesliders(m) = begin
-        sl = state_slider.(app.statelabels, init_state(m))
+        sl = state_slider.(STATELABELS, init_state(m))
         map!((x...) -> [x...], stateobs, throttle.(0.3, observe.(sl))...)
         sl
     end
@@ -372,22 +371,6 @@ webapp(app; port=8000) = webio_serve(page("/", req -> app(req)), port)
 
 savecode(app, name) = begin
     lines = split("models[:$name] = " * codify(app.savedmodel), "\n")
-    code = join([lines[1], "    environment = tas,", lines[2:end]...], "\n")
+    code = join([lines[1], "    environment = environments[:tas],", lines[2:end]...], "\n")
     write("models/$name.jl", code)
-end
-
-loadsavedmodels(dir) = begin
-    # Load all the saved models
-    models = OrderedDict()
-    modeldir = joinpath(dir, "models")
-    include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-end
-
-loadenvironments(dir) = begin
-    locationspath = joinpath(dir, "microclimate/locations.jld")
-    @load locationspath tas desert qld
-    environments = OrderedDict(:Tas=>tas, :Desert=>desert, :QLD=>qld)
-    env = first(values(environments))
-    tspan = (0:1:length(radiation(env)) - 1) * hr
-    environments, tspan
 end
