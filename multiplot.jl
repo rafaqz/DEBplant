@@ -5,11 +5,7 @@ using Unitful: hr, d
 const month_hours = 365.25 / 12 * 24hr 
 
 import Base: round
-# @eval ($f)(::Type{T}, x::Quantity) where {T<:Quantity} = T(($f)(typeof(one(T)), uconvert(unit(T), x).val))
-
-@load "locations.jld"
-
-plotly()
+round(::Type{T}, x::Quantity) where {T<:Quantity} = T(($f)(typeof(one(T)), uconvert(unit(T), x).val))
 
 function solplot!(plt, model, u, envstart)
     model.dead[] = false
@@ -46,30 +42,42 @@ function multiplot(title, model, u, envstart)
     return nothing
 end
 
-gr()
+dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
+include(joinpath(dir, "app.jl"))
 
-model = uimodel;
+environments, _ = loadenvironments(dir)
+models = loadsavedmodels(dir)
+model = models[:init]
 
-u = zeros(12)mol
+u = zeros(12)g
 labels = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
 ulabelled = LVector{eltype(u),typeof(u),labels}(u)
 
-seed = copy(ulabelled)
-seed.VS = 1e-4mol 
-seed.CS = 1e-4mol 
-seed.NS = 1e-4mol 
-seed.VR = 1e-4mol 
-seed.CR = 0.01mol
-seed.NR = 0.0005mol
-seed
+small_seed = copy(ulabelled)
+small_seed.VS = 1e-3mg * 25.0g/mol 
+small_seed.CS = 1e-3mg * 25.0g/mol 
+small_seed.NS = 1e-3mg * 25.0g/mol 
+small_seed.VR = 1e-3mg * 25.0g/mol 
+small_seed.CR = 1.0mg * 25.0g/mol
+small_seed.NR = 0.05mg * 25.0g/mol
+small_seed
+
+large_seed = copy(ulabelled)
+large_seed.VS = 1e-1mg * 25.0g/mol 
+large_seed.CS = 1e-1mg * 25.0g/mol 
+large_seed.NS = 1e-1mg * 25.0g/mol 
+large_seed.VR = 1e-1mg * 25.0g/mol 
+large_seed.CR = 100.0mg * 25.0g/mol
+large_seed.NR = 5.0mg * 25.0g/mol
+large_seed
 
 plant = copy(ulabelled)
-plant.VS = 10mol 
-plant.CS = 5mol
-plant.NS = 0.5mol
-plant.VR = 10mol
-plant.CR = 5mol
-plant.NR = 0.5mol
+plant.VS = 10g * 25.0g/mol 
+plant.CS = 10g * 25.0g/mol 
+plant.NS = 0.5g * 25.0g/mol 
+plant.VR = 5.0g * 25.0g/mol 
+plant.CR = 5.0mg * 25.0g/mol
+plant.NR = 0.25mg * 25.0g/mol
 plant
 
 u = seed

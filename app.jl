@@ -5,6 +5,9 @@ using Photosynthesis, Microclimate, DynamicEnergyBudgets, Codify
 using DataStructures
 using Select
 
+
+const statelabels = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
+
 import Plots:px, pct, GridLayout
 using Photosynthesis: potential_dependence
 using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, shape_correction, define_organs,
@@ -18,7 +21,6 @@ mutable struct ModelApp{M,E,T,SL}
     models::M
     environments::E
     tspan::T
-    statelabels::SL
     savedmodel
 end
 
@@ -372,4 +374,20 @@ savecode(app, name) = begin
     lines = split("models[:$name] = " * codify(app.savedmodel), "\n")
     code = join([lines[1], "    environment = tas,", lines[2:end]...], "\n")
     write("models/$name.jl", code)
+end
+
+loadsavedmodels(dir) = begin
+    # Load all the saved models
+    models = OrderedDict()
+    modeldir = joinpath(dir, "models")
+    include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+end
+
+loadenvironments(dir) = begin
+    locationspath = joinpath(dir, "microclimate/locations.jld")
+    @load locationspath tas desert qld
+    environments = OrderedDict(:Tas=>tas, :Desert=>desert, :QLD=>qld)
+    env = first(values(environments))
+    tspan = (0:1:length(radiation(env)) - 1) * hr
+    environments, tspan
 end

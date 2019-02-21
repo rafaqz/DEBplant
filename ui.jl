@@ -1,27 +1,17 @@
+# Use a set script path otherwise the current working directory
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
+
+# Load the app scripts
 include(joinpath(dir, "app.jl"))
 
-# Plot package
-gr() # for faster plotting, maybe?
-plotly() # for zoom and pan
-
-statelabels = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
-
 # Import environments 
-locationspath = joinpath(dir, "microclimate/locations.jld")
-@load locationspath tas desert qld
-environments = OrderedDict(:Tas=>tas, :Desert=>desert, :QLD=>qld)
-env = first(values(environments))
+environments, tspan = loadenvironments(dir)
 
-tspan = (0:1:length(radiation(env)) - 1) * hr
+# Import models
+models = loadsavedmodels(dir)
 
-# Load all the saved models
-models = OrderedDict()
-modeldir = joinpath(dir, "models")
-include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-models
-
-app = ModelApp(models, environments, tspan, statelabels, nothing);
+# Build the app interface
+app = ModelApp(models, environments, tspan, nothing);
 
 # Electron desktop app
 electronapp(app; zoom=0.5)
