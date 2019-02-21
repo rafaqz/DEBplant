@@ -35,7 +35,7 @@ function multiplot(title, model, u, envstart)
         solplot!(plt, model, u, envstart)
     end
     plot(plt, plot_title=title, xlab="Time in hours", ylab="Structural biomass in grams (roots shown as negative)", 
-         legend=:none, size=(1200,800), dpi=300)
+         legend=:none, size=(1200,800), dpi=100)
     savefig(title)
     return nothing
 end
