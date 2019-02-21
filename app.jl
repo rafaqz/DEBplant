@@ -202,9 +202,11 @@ end
 runplotly() = plotly()
 rungr() = gr()
 
+gr()
+
 function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
-    throt = 0.4
+    throt = 0.1
     env = first(values(app.environments))
     envobs = Observable{Any}(env);
 
