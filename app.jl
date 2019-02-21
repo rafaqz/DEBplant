@@ -5,6 +5,9 @@ using Photosynthesis, Microclimate, DynamicEnergyBudgets, Codify
 using DataStructures
 using Select
 
+
+const statelabels = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
+
 import Plots:px, pct, GridLayout
 using Photosynthesis: potential_dependence
 using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, shape_correction, define_organs,
@@ -18,7 +21,6 @@ mutable struct ModelApp{M,E,T,SL}
     models::M
     environments::E
     tspan::T
-    statelabels::SL
     savedmodel
 end
 
@@ -70,7 +72,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     s = sol' .* model.shared.core_pars.w_V
     s1 = s[:, 1:6]
     s2 = s[:, 7:12]
-    solplot = plot(sol.t, s1, labels=reshape([app.statelabels[1:6]...], 1, 6)), plot(sol.t, s2, labels=reshape([app.statelabels[7:12]...], 1, 6))
+    solplot = plot(sol.t, s1, labels=reshape([statelabels[1:6]...], 1, 6)), plot(sol.t, s2, labels=reshape([app.statelabels[7:12]...], 1, 6))
     # if plotarea
     # organs = define_organs(model, 1hr)
     # o = organs[1]
@@ -358,4 +360,20 @@ savecode(app, name) = begin
     lines = split("models[:$name] = " * codify(app.savedmodel), "\n")
     code = join([lines[1], "    environment = tas,", lines[2:end]...], "\n")
     write("models/$name.jl", code)
+end
+
+loadsavedmodels(dir) = begin
+    # Load all the saved models
+    models = OrderedDict()
+    modeldir = joinpath(dir, "models")
+    include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+end
+
+loadenvironments(dir) = begin
+    locationspath = joinpath(dir, "microclimate/locations.jld")
+    @load locationspath tas desert qld
+    environments = OrderedDict(:Tas=>tas, :Desert=>desert, :QLD=>qld)
+    env = first(values(environments))
+    tspan = (0:1:length(radiation(env)) - 1) * hr
+    environments, tspan
 end
