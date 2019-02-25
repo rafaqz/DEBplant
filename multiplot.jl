@@ -62,22 +62,20 @@ environments, _ = loadenvironments(dir)
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-environments[:tas].radiation
 envstart = 1.0hr
 
 u = zeros(12)mol
-labels = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
-ulabelled = LArray{labels}(u)
+ulabelled = LArray{STATEKEYS}(u)
 
 smallseed = copy(ulabelled)
 smallseed.VS = 1e-3mg / (25.0g/mol)
 smallseed.CS = 1e-3mg / (25.0g/mol)
-smallseed.NS = 1e-3mg / (25.0g/mol)
+smallseed.NS = 1e-4mg / (25.0g/mol)
 smallseed.VR = 1e-3mg / (25.0g/mol)
 smallseed.CR = 1.0mg  / (25.0g/mol)
 smallseed.NR = 0.05mg / (25.0g/mol)
 smallseed
-# smallseed = [0.0, 1e-5, 0.0, 1e-5, 1e-5, 1e-5, 0.0, 1e-5, 0.0, 0.001, 0.00005, 0.0]mol
+smallseed = [0.0, 1e-5, 0.0, 1e-5, 1e-5, 1e-5, 0.0, 1e-5, 0.0, 0.001, 0.00005, 0.0]mol
 
 largeseed = copy(ulabelled)
 largeseed.VS = 1e-1mg  / (25.0g/mol)
@@ -86,7 +84,7 @@ largeseed.NS = 1e-1mg  / (25.0g/mol)
 largeseed.VR = 1e-1mg  / (25.0g/mol)
 largeseed.CR = 100.0mg / (25.0g/mol)
 largeseed.NR = 5.0mg   / (25.0g/mol)
-# largeseed = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 0.01, 0.0005, 0.0]mol
+largeseed = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 0.01, 0.0005, 0.0]mol
 
 plant = copy(ulabelled)
 plant.VS = 10g    / (25.0g/mol)
@@ -96,10 +94,9 @@ plant.VR = 5.0g   / (25.0g/mol)
 plant.CR = 5.0mg  / (25.0g/mol)
 plant.NR = 0.25mg / (25.0g/mol)
 plant
-# plant = [0.0, 1e-2, 0.0, 1e-2, 1e-2, 1e-2, 0.0, 1e-2, 0.0, 1.0, 0.05, 0.0]mol
-#
+plant = [0.0, 1e-2, 0.0, 1e-2, 1e-2, 1e-2, 0.0, 1e-2, 0.0, 1.0, 0.05, 0.0]mol
+
 states = Dict(:smallseed => smallseed, :largeseed => largeseed, :plant => plant)
-m = models[:maturity]
 
 monthlyplotall(models[:maturity], environments, states, envstart)
 

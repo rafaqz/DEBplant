@@ -55,17 +55,24 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     model.records = m2.records
     model.environment_start[] = envstart
     model.dead[] = false
+    set_allometry(model, u)
 
     app.savedmodel = model
 
-    println("u, tstop: ", (ustrip(u), ustrip(tstop)))
+    # println("u, tstop: ", (ustrip(u), ustrip(tstop)))
+    # println("num params: ", length(params))
     prob = DiscreteProblem{true}(model, ustrip(u), (one(tstop), ustrip(tstop)))
-    sol = solve(prob, FunctionMap(scale_by_time = true))
-    background_color = model.dead[] ? :pink : :white
-    solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
+    local sol
+    try
+        sol = solve(prob, FunctionMap(scale_by_time = true))
+    catch e
+        println(e)
+        return plot(), plot()
+    end
+    solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft,
                     labels=reshape([STATELABELS[1:6]...], 1, 6), ylabel="State (CMol)",
                     xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
-    solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft, background_color=background_color,
+    solplot2 = plot(sol, vars = [7:12...], plotdensity=400, legend=:topleft,
                     labels=reshape([STATELABELS[7:12]...], 1, 6), ylabel="State (CMol)",
                     xlabel=string(model.params[2].name, " : ", typeof(model.params[2].assimilation_pars).name, " - time (hr)"))
     # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
@@ -86,7 +93,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
 end
 
 
-function make_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVector, solplots, vars, env, flux,
+function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, env, flux,
                    plottemp::Bool, plotscale::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number)
     plotsize=(1700, 800)
 
@@ -131,7 +138,6 @@ end
 
 plot_shape(p) = plot(x -> shape_correction(p.shape_pars, x), (0.0mol:0.01mol:100.0mol),
                        legend=false, ylabel="Correction", xlabel="CMols Stucture")
-
 
 plot_fluxes!(plots, obs, J, tspan) = begin
     ps = []
@@ -198,6 +204,7 @@ runplotly() = plotly()
 rungr() = gr()
 
 gr()
+
 
 function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
@@ -279,6 +286,35 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     stateobs = Observable{typeof(state)}(state);
     statebox = Observable{typeof(dom"div"())}(dom"div"());
 
+    make_paramsliders(model) = begin
+        params = ulflatten(Vector, model)
+        fnames = fieldnameflatten(Vector, model)
+        parents = parentflatten(Vector, model)
+        limits = metaflatten(Vector, model, FieldMetadata.limits)
+        descriptions = metaflatten(Vector, model, FieldMetadata.description)
+        unts = metaflatten(Vector, model, FieldMetadata.units)
+        log = metaflatten(Vector, model, FieldMetadata.logscaled)
+        attributes = broadcast((p, n, d, u) -> Dict(:title => "$p.$n: $d $(u == nothing ? "" : u)"), parents, fnames, descriptions, unts)
+        sl = broadcast(limits, fnames, params, attributes, log, unts) do l, n, p, a, lg, u
+            # println((l, n, p, a, lg))
+            # Use a log range if specified in metadata
+            rnge = lg ? vcat(exp10.(range(log10(abs(l[1])), stop=sign(log10(abs(l[2]))) , length=100) * sign(l[2])) * l[2]) : collect(l[1]:(l[2]-l[1])/100:l[2])
+            InteractBase.slider(rnge, label=string(n), value=p, attributes=a)
+        end
+        paramobs[] = [s[] for s in sl]
+        map!((x...) -> [x...], paramobs, throttle.(throt, observe.(sl))...)
+
+        solplotobs[] = sol_plot(modelobs[], paramobs[], stateobs[], tstopobs[], envstartobs[], app)
+        sl
+    end
+
+    make_statesliders(m) = begin
+        sl = state_slider.(STATELABELS, init_state(m))
+        map!((x...) -> [x...], stateobs, throttle.(throt, observe.(sl))...)
+        stateobs[] = [s[] for s in sl]
+        sl
+    end
+
     make_varchecks(model) = begin
         checks = PlotNested.plotchecks(model.records)
         map!((x...) -> [x...], varobs, observe.(checks)...)
@@ -293,53 +329,21 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         checks
     end
 
-    make_paramsliders(model) = begin
-        params = ulflatten(Vector, model)
-        fnames = fieldnameflatten(Vector, model)
-        parents = parentflatten(Vector, model)
-        limits = metaflatten(Vector, model, FieldMetadata.limits)
-        descriptions = metaflatten(Vector, model, FieldMetadata.description)
-        unts = metaflatten(Vector, model, FieldMetadata.units)
-        log = metaflatten(Vector, model, FieldMetadata.logscaled)
-        attributes = broadcast((p, n, d, u) -> Dict(:title => "$p.$n: $d $(u == nothing ? "" : u)"), parents, fnames, descriptions, unts)
-        sl = broadcast(limits, fnames, params, attributes, log, unts) do l, n, p, a, lg, u
-            println((l, n, p, a, lg))
-            # Use a log range if specified in metadata
-            rnge = lg ? vcat(exp10.(range(log10(abs(l[1])), stop=sign(log10(abs(l[2]))) , length=100) * sign(l[2])) * l[2]) : collect(l[1]:(l[2]-l[1])/100:l[2])
-            InteractBase.slider(rnge, label=string(n), value=p, attributes=a)
-        end
-        map!((x...) -> [x...], paramobs, throttle.(throt, observe.(sl))...)
-        paramobs[] = [s[] for s in sl]
-
-        solplotobs[] = sol_plot(modelobs[], paramobs[], stateobs[], tstopobs[], envstartobs[], app)
-        sl
-    end
-
-    make_statesliders(m) = begin
-        sl = state_slider.(STATELABELS, init_state(m))
-        map!((x...) -> [x...], stateobs, throttle.(throt, observe.(sl))...)
-        stateobs[] = [s[] for s in sl]
-        sl
-    end
-
     flux_grids = (make_grid(STATE, TRANS), make_grid(STATE1, TRANS1,),
                   make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
     fluxbox = hbox(arrange_grid.(flux_grids)...)
     fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
+
     tstopobs = map(throttle(throt, observe(tstoptext))) do t
         int = tryparse(Int, t)
         int == nothing ? 8760hr : int * hr
     end
     envstartobs = throttle(throt, observe(envstart))
 
+    map!(make_paramsliders, paramsliders, modelobs)
     map!(make_varchecks, varchecks, modelobs)
     map!(make_envchecks, envchecks, modelobs)
     map!(make_statesliders, statesliders, modelobs)
-    map!(make_paramsliders, paramsliders, modelobs)
-
-    map!(sol_plot, solplotobs, modelobs[], paramobs, stateobs, tstopobs, envstartobs, app)
-    map!(make_plot, plotobs, modelobs[], paramobs, stateobs, solplotobs, varobs, envobs, 
-         fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs)
 
     map!(c -> vbox(hbox(c...)), varbox, varchecks)
     halfenv = min(12, length(envchecks[]))
@@ -347,11 +351,16 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(s -> spreadwidgets(s), parambox, paramsliders)
     map!(s -> spreadwidgets(s), statebox, statesliders)
 
+    map!(make_plot, plotobs, modelobs, stateobs[], solplotobs, varobs, envobs, 
+         fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs[])
+    map!(sol_plot, solplotobs, modelobs, paramobs, stateobs, tstopobs, envstartobs, app)
+
     modelobs[] = modeldrop[]
 
     ui = vbox(hbox(reload, dropbox), controlbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
     # dom"div"()
 end
+
 
 state_slider(label, val) =
     slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=label, value=val)
