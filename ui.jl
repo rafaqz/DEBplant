@@ -3,7 +3,6 @@ dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 
 # Load the app scripts
 include(joinpath(dir, "app.jl"))
-
 # Import environments 
 environments, tspan = loadenvironments(dir)
 

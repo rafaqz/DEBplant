@@ -59,13 +59,8 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     app.savedmodel = model
 
     println("u, tstop: ", (ustrip(u), ustrip(tstop)))
-    prob = DiscreteProblem(model, ustrip(u), (one(tstop), ustrip(tstop)))
-    local sol
-    try
-        sol = solve(prob, FunctionMap(scale_by_time = true))
-    catch
-        return plot(), plot()
-    end
+    prob = DiscreteProblem{true}(model, ustrip(u), (one(tstop), ustrip(tstop)))
+    sol = solve(prob, FunctionMap(scale_by_time = true))
     background_color = model.dead[] ? :pink : :white
     solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft, background_color=background_color,
                     labels=reshape([STATELABELS[1:6]...], 1, 6), ylabel="State (CMol)",

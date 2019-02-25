@@ -194,9 +194,9 @@ version = "0.3.2"
 
 [[DiffEqBase]]
 deps = ["Compat", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "RecursiveArrayTools", "Requires", "Roots", "SparseArrays", "StaticArrays", "Statistics", "SuiteSparse", "TableTraits", "Test", "TreeViews"]
-git-tree-sha1 = "e8eb39fcea76aa7212df40536f4a67bd29e23401"
+git-tree-sha1 = "0ec073be8ad4a704bc9c4ba2f649126308ffb849"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "5.2.3"
+version = "5.4.0"
 
 [[DiffEqDiffTools]]
 deps = ["LinearAlgebra", "Test"]
@@ -224,9 +224,9 @@ version = "0.0.10"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Printf", "Random", "Statistics", "Test"]
-git-tree-sha1 = "0e37d8a95bafbeb9c800ef27ab6f443d29e17610"
+git-tree-sha1 = "a135c7c062023051953141da8437ed74f89d767a"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.7.4"
+version = "0.8.0"
 
 [[Distributed]]
 deps = ["LinearAlgebra", "Random", "Serialization", "Sockets"]
@@ -246,7 +246,7 @@ version = "0.6.0"
 
 [[DynamicEnergyBudgets]]
 deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "LinearAlgebra", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Test", "Unitful"]
-git-tree-sha1 = "a80e08c935dd5e99dde0cae0c1f194d1d0563c56"
+git-tree-sha1 = "19255955d0e6c342378f6b0df89ac3a369659b92"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
@@ -632,9 +632,9 @@ version = "1.0.2"
 
 [[OrdinaryDiffEq]]
 deps = ["DataStructures", "DiffEqBase", "DiffEqDiffTools", "DiffEqOperators", "ExponentialUtilities", "ForwardDiff", "GenericSVD", "InteractiveUtils", "LinearAlgebra", "Logging", "MuladdMacro", "NLsolve", "Parameters", "Printf", "Random", "RecursiveArrayTools", "Reexport", "SparseArrays", "StaticArrays", "Statistics", "Test"]
-git-tree-sha1 = "ad08db9efe2a5557d06daffd57e672a0e730f512"
+git-tree-sha1 = "4bcf8ce928dd6c905ed4bcd64b15687781543a87"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-version = "5.1.4"
+version = "5.2.1"
 
 [[PDMats]]
 deps = ["Arpack", "LinearAlgebra", "SparseArrays", "SuiteSparse", "Test"]
@@ -823,7 +823,7 @@ uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "0.2.1"
 
 [[SimpleRoots]]
-git-tree-sha1 = "e2e5b9ecf396514e7074449a0a8f01075ab88fdf"
+git-tree-sha1 = "ed0012f43a407814c89e0895a3238610e0f74945"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/SimpleRoots.jl"
 uuid = "6accb78c-d340-5052-9dc3-a835939e19d0"
@@ -878,9 +878,9 @@ version = "0.8.0"
 
 [[StatsPlots]]
 deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "IterableTables", "KernelDensity", "Observables", "Plots", "RecipesBase", "Reexport", "StatsBase", "TableTraits", "TableTraitsUtils", "Test", "Widgets"]
-git-tree-sha1 = "2baca51a69f5496664381489c6c0d60c9b23aeab"
+git-tree-sha1 = "d722a2d4293ded61124654aae6696c68d7946a95"
 uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
-version = "0.10.1"
+version = "0.10.2"
 
 [[SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "SparseArrays"]
@@ -935,7 +935,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[Unitful]]
 deps = ["LinearAlgebra", "Random", "Test"]
-git-tree-sha1 = "ba654182cad07cd6c1f3ae969475e556db3283ea"
+git-tree-sha1 = "81c0caecd5a64dd1f3c4a5b17d1f31c04aca267b"
 repo-rev = "master"
 repo-url = "https://github.com/ajkeller34/Unitful.jl"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
