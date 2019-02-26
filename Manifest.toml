@@ -251,8 +251,10 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.6.0"
 
 [[DynamicEnergyBudgets]]
-deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Unitful"]
-path = "/home/raf/julia/DynamicEnergyBudgets/"
+deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "LinearAlgebra", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Test", "Unitful"]
+git-tree-sha1 = "ea75d503d4a8d2f0f0644dc7a3bc42412572b9d1"
+repo-rev = "master"
+repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
 version = "0.0.0"
 
@@ -654,7 +656,9 @@ version = "0.10.3"
 
 [[Photosynthesis]]
 deps = ["Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Mixers", "Roots", "Unitful"]
-path = "/home/raf/julia/Photosynthesis/"
+git-tree-sha1 = "6b5aa8182a2e65b8e01e0e8ca80867d7cfa5440b"
+repo-rev = "master"
+repo-url = "https://github.com/rafaqz/Photosynthesis.jl"
 uuid = "5e10c064-2706-53a3-a67d-d473e313a663"
 version = "0.0.0"
 
@@ -799,7 +803,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[Select]]
 deps = ["FieldMetadata"]
-path = "/home/raf/julia/Select"
+git-tree-sha1 = "8aaa754cc6270c979a838e9816adbdc48202a385"
+repo-rev = "master"
+repo-url = "https://github.com/rafaqz/Select.jl"
 uuid = "9af9b3ce-3316-11e9-0fa8-7b2e06453de4"
 version = "0.1.0"
 
