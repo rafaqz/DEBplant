@@ -20,7 +20,7 @@ models[:init] = Plant(
             ),
             shape_pars = Plantmorph(
                 M_Vref = 0.1u"mol",
-                M_Vscaling = 1.0u"mol",
+                M_Vscaling = 32.59501669241289u"mol",
             ),
             allometry_pars = Allometry(
                 β0 = 0.0024000000000000002u"g",
@@ -40,12 +40,12 @@ models[:init] = Plant(
             ),
             shape_pars = Plantmorph(
                 M_Vref = 0.1u"mol",
-                M_Vscaling = 1.0u"mol",
+                M_Vscaling = 37.47634845720768u"mol",
             ),
             allometry_pars = Allometry(
                 β0 = 0.0024000000000000002u"g",
-                β1 = 0.1u"m",
-                α = 0.1,
+                β1 = 1.5199110829529336u"m",
+                α = 0.21049041445120198,
             ),
             maturity_pars = nothing,
             trans_pars = nothing,
@@ -71,7 +71,7 @@ models[:init] = Plant(
             K_autophagy = 1.0e-6u"mol",
         ),
         tempcorr_pars = TempCorrLowerUpper(
-            reftemp = 300.0u"K",
+            reftemp = 303.68u"K",
             arrtemp = 2000.0u"K",
             tbelow = -30.0u"K",
             arrlower = 20000.0u"K",
@@ -79,10 +79,10 @@ models[:init] = Plant(
             arrupper = 70000.0u"K",
         ),
         catabolism_pars = CatabolismCN(
-            k_E = 0.2u"d^-1",
+            k_E = 0.29u"d^-1",
         ),
         maintenance_pars = Maintenance(
-            j_E_mai = 0.01u"d^-1",
+            j_E_mai = 0.001788649529057435u"d^-1",
         ),
     ),
 )

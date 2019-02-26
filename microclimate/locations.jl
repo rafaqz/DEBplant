@@ -13,8 +13,8 @@ envgrid = load_grid(basepath, years, shade, skipped);
 
 t1 = MicroclimPoint(envgrid, CartesianIndex(65, 35))
 t2 = MicroclimPoint(envgrid, CartesianIndex(60, 35))
-t3 = MicroclimPoint(envgrid, CartesianIndex(55, 35))
-t4 = MicroclimPoint(envgrid, CartesianIndex(50, 35))
+t3 = MicroclimPoint(envgrid, CartesianIndex(50, 35))
+t4 = MicroclimPoint(envgrid, CartesianIndex(40, 35))
 
 @save "microclimate/locations.jld" t1 t2 t3 t4
 # @load "microclimate/locations.jld" tas desert qld

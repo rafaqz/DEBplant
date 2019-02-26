@@ -1,21 +1,28 @@
-using Revise
-using DynamicEnergyBudgets, Unitful
-using Flatten, OrdinaryDiffEq, Microclimate
+dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
+include(joinpath(dir, "util/hide.jl"))
+include(joinpath(dir, "load.jl"))
 
 du = [0.0 for i in 1:12]u"mol/hr"
 u = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]u"mol"
 t = 0u"hr":1u"hr":8760u"hr"
-du = [0.0 for i in 1:12]
-u = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
-t = 0:1:8760
-# du = [0.0 for i in 1:18]u"mol/hr"
-# u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 10.0]u"mol"
-# u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
-# const u = [0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1e-1, 0.0, 1e-1, 0.0, 1e-1, 1e-1, 1.0]u"mol"
-env = environment
+# du = [0.0 for i in 1:12]
+# u = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
+# t = 0:1:8760
 
-organism = models[:init]
-organism = models[:maturity]
+# Import environments 
+environments, tspan = loadenvironments(dir)
+env = first(values(environments))
+
+# Import models
+models = OrderedDict()
+modeldir = joinpath(dir, "models")
+include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+
+organism = models[:init];
+organism = models[:maturity];
+organism = update_vars(models[:fvcb]);
+v = organism.records[1].vars
+organism.environment = environments[:t1];
 modelobs = Ref(DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr"));
 organism = DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.PlantCN(environment=env, time=t, environment_start=1u"hr");
@@ -25,7 +32,6 @@ organism = DynamicEnergyBudgets.FvCBPlant(environment=env, time=t);
 organism(du, u, nothing, 10u"hr")
 organism(du, u, nothing, 1)
 
-length(organism.records[1].vars.rate)
 organs = define_organs(organism, 1hr)
 o = organs[1]
 ux = DynamicEnergyBudgets.split_state(organs, u)

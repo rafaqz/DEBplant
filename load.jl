@@ -1,3 +1,14 @@
+using Revise, Unitful, Microclimate, JLD2, DataStructures, Flatten, FieldMetadata, OrdinaryDiffEq
+using Photosynthesis, DynamicEnergyBudgets
+using DataStructures
+
+import Plots:px, pct, GridLayout
+using Photosynthesis: potential_dependence
+using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, shape_correction, define_organs,
+      photosynthesis, split_state, HasCN, HasCNE, has_reserves, tempcorr_pars,
+      assimilation_pars, assimilation_vars, parconv, w_V, build_vars
+using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, cm, m, s, hr, d, mol, mmol, μmol, σ
+
 using Microclimate, Unitful, DataStructures, Setfield, DataStructures, JLD2
 
 const STATEKEYS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
@@ -17,4 +28,14 @@ set_allometry(model, state) = begin
     @set! model.params[1].allometry_pars.β0 = state[2] * w_V(model.shared)
     @set! model.params[2].allometry_pars.β0 = state[8] * w_V(model.shared)
     model
+end
+
+assimvars(::AbstractCAssim, tstop) = DynamicEnergyBudgets.ShootVars()
+assimvars(::AbstractNAssim) = DynamicEnergyBudgets.RootVars()
+assimvars(::FvCBPhotosynthesis) = DynamicEnergyBudgets.FvCBShootVars()
+
+function update_vars(m, tstop)
+    m = @set m.records[1].vars = build_vars(assimvars(m.params[1].assimilation_pars), 1:ustrip(tstop))
+    m = @set m.records[2].vars = build_vars(assimvars(m.params[2].assimilation_pars), 1:ustrip(tstop))
+    m
 end

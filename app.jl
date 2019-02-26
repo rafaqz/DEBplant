@@ -1,21 +1,12 @@
-using Revise, Unitful, Flatten, FieldMetadata, OrdinaryDiffEq
-using InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil, Mux
-using Plots, UnitfulPlots, StatsPlots, PlotNested
-using Photosynthesis, Microclimate, DynamicEnergyBudgets, Codify, Select
-using DataStructures
+using Revise, Setfield, InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil, Mux
+using Plots, UnitfulPlots, StatsPlots, PlotNested, Codify, Select, ColorSchemes
 
-import Plots:px, pct, GridLayout
-using Photosynthesis: potential_dependence
-using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, shape_correction, define_organs,
-      photosynthesis, split_state, HasCN, HasCNE, has_reserves, tempcorr_pars,
-      assimilation_pars, assimilation_vars, parconv, w_V
-using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, cm, m, s, hr, d, mol, mmol, μmol, σ
-
-using JLD2
+include(joinpath(dir, "load.jl"))
+include(joinpath(dir, "util/hide.jl"))
 
 const STATELABELS = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
 
-mutable struct ModelApp{M,E,T} 
+mutable struct ModelApp{M,E,T}
     models::M
     environments::E
     tspan::T
@@ -27,23 +18,23 @@ init_state(model) = init_state(has_reserves.(define_organs(model, 1hr)))
 init_state(::NTuple{2,HasCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 0.01, 0.0005, 0.0]mol
 init_state(::NTuple{2,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 0.01]mol
 
-include(joinpath(dir, "util/hide.jl"))
-include(joinpath(dir, "load.jl"))
-
 plotly()
 
-photo(o, u, x) = begin
-    update_photovars(assimilation_vars(o), x)
-    photosynthesis(assimilation_pars(o), o, u) / (w_V(o) * assimilation_pars(o).SLA)
-end
 
-pot(o, x) = potential_dependence(assimilation_pars(o).potential_modifier, x)
+pot(p, x) = potential_dependence(p.potential_modifier, x)
 
-update_photovars(v::CarbonVars, x) = begin
+photo(o, u, x) = photo(assimilation_vars(o), o, u, x)
+photo(v::CarbonVars, o, u, x) = begin
     v.J_L_F = x*parconv
     v.soilwaterpotential = zero(v.soilwaterpotential)
+    photosynthesis(assimilation_pars(o), o, u) / (w_V(o) * assimilation_pars(o).SLA)
 end
-update_photovars(v::Photosynthesis.PhotoVars, x) = v.par = x * oneunit(v.par)
+photo(v::Photosynthesis.PhotoVars, o, u, x) = begin
+    v.rnet = x
+    v.par = x * parconv
+    run_enbal!(assimilation_pars(o).photoparams, v)
+    v.aleaf * assimilation_pars(o).SLA * w_V(o)
+end
 
 function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVector, tstop::Number, envstart::Number, app)
 
@@ -56,6 +47,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     model.environment_start[] = envstart
     model.dead[] = false
     set_allometry(model, u)
+    # println("vars: ", model.records[1].vars.rate)
 
     app.savedmodel = model
 
@@ -79,7 +71,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     # s = sol' # .* model.shared.core_pars.w_V
     # s1 = view(s, :, 1:6)
     # s2 = s[:, 7:12]
-    # solplot = (plot(sol.t, s1, labels=reshape([STATELABELS[1:6]...], 1, 6)),) 
+    # solplot = (plot(sol.t, s1, labels=reshape([STATELABELS[1:6]...], 1, 6)),)
     # plot(sol.t, s2, labels=reshape([STATELABELS[7:12]...], 1, 6))
     # if plotarea
     # organs = define_organs(model, 1hr)
@@ -117,12 +109,12 @@ function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, e
 
     subplots = []
 
-    plottemp && push!(subplots, plot(x -> tempcorr(x, tempcorr_pars(o)), 0.0°C:1.0°C:50.0°C,
+    plottemp && push!(subplots, plot(x -> tempcorr(x, tempcorr_pars(o)), K(0.0°C):1.0K:K(50.0°C),
                                      legend=false, ylabel="Correction", xlabel="°C"))
     plotscale && push!.(Ref(subplots), plot_shape.(model.params))
-    plotphoto && push!(subplots, plot(x -> photo(o, state[1], x), (0*W*m^-2:10*W*m^-2:1000*W*m^-2),
+    plotphoto && push!(subplots, plot(x -> photo(o, state[1], x), (0*W*m^-2:5*W*m^-2:1000*W*m^-2),
                                       ylabel="C uptake", xlabel="Irradiance"))
-    plotpot && push!(subplots, plot(x -> pot(o, x), (0.0kPa:-1.0kPa:-5000kPa),
+    plotpot && push!(subplots, plot(x -> pot(assimilation_pars(o), x), (0.0kPa:-10.0kPa:-5000kPa),
                                     ylabel="C uptake modification", xlabel="Soil water potential"))
 
     if length(subplots) > 0
@@ -183,23 +175,6 @@ allsubtypes(t::Tuple{X,Vararg}) where X = (allsubtypes(t[1])..., allsubtypes(Bas
 allsubtypes(::Tuple{}) = ()
 allsubtypes(t::Union) = (allsubtypes(t.a)..., allsubtypes(t.b)...,)
 
-assimvars(::AbstractCAssim) = DynamicEnergyBudgets.ShootVars()
-assimvars(::AbstractNAssim) = DynamicEnergyBudgets.RootVars()
-assimvars(::FvCBPhotosynthesis) = DynamicEnergyBudgets.FvCBShootVars()
-
-build_model(params, su, cat, rate, prod, mat, rej, trans, shape, allometry, assim1, assim2,
-            temp, feedback, env, envstart) = begin
-    pkwargs = (maturity_pars=mat(), rate_formula=rate(),
-               production_pars=prod(), rejection_pars=rej(), trans_pars=trans(),
-               shape_pars=shape(), allometry_pars=allometry())
-    p1 = params(;pkwargs..., assimilation_pars=assim1())
-    p2 = params(;deepcopy(pkwargs)..., assimilation_pars=assim2())
-    sh = SharedParams(su_pars=su(), tempcorr_pars=temp(), catabolism_pars=cat(), feedback_pars=feedback())
-    envstart = setindex!(Array{typeof(envstart),0}(undef), envstart)
-    Plant(params=(p1, p2), shared=sh, environment=env, time=tspan, environment_start=envstart,
-             vars=(assimvars(assim1()), assimvars(assim2())))
-end
-
 runplotly() = plotly()
 rungr() = gr()
 
@@ -216,7 +191,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     tstoptext = textbox(value="8760", label="Timespan")
     envstart = slider(1hr:1hr:tspan.stop, value = 1hr, label="Environment start time")
     envdrop = dropdown(app.environments, value=env, label="Environment")
-    modeldrop = dropdown(app.models, value=first(values(app.models)), label="Model")
+    modeldrop = dropdown(app.models, value=app.models[:init], label="Model")
     modelobs = Observable{Any}(first(values(app.models)))
     gr = button("GR")
     plotly = button("Plotly")
@@ -234,11 +209,11 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
     on(p -> rungr(), observe(gr))
     on(p -> runplotly(), observe(plotly))
-        
+
 
     selectables = select(modelobs[])
     drops = []
-    for (typ, def, lab) in selectables 
+    for (typ, def, lab) in selectables
         push!(drops, dropdown([allsubtypes(typ)...], value=def, label=lab))
     end
     half = length(drops) ÷ 2
@@ -248,18 +223,24 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     solplotobs = Observable{Any}([plot(), plot()])
     plotobs = Observable{Any}(plot())
 
-    map!(modelobs, observe(modeldrop), observe(envdrop)) do m, e 
+    map!(modelobs, observe(modeldrop), observe(envdrop)) do m, e
+        load_model(m, e)
+    end
+
+    reload_model(app, drops) = begin
+        m = updateselected(modelobs[], getindex.(drops))
+        modelobs[] = load_model(m, envdrop[])
+    end
+
+    load_model(m, e) = begin
+        m = update_vars(m, 87600)
         m.environment = e
+        # Update all the component dropdowns
         setindex!.(drops, getindex.(select(m), 2))
         app.savedmodel = m
         m
     end
 
-    reload_model(app, drops) = begin
-        modelobs[] = updateselected(modelobs[], getindex.(drops))
-        modelobs[].environment = envdrop[]
-        app.savedmodel = modelobs[]
-    end
 
     on(observe(reload)) do x
         reload_model(app, drops)
@@ -269,7 +250,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         savecode(app, savename[])
     end
 
-    paramsliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
+    paramsliders = Observable{Vector{Any}}(Widget{:slider}[]);
     paramobs = Observable{Vector{Any}}([]);
     parambox = Observable{typeof(dom"div"())}(dom"div"());
 
@@ -290,11 +271,12 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         params = ulflatten(Vector, model)
         fnames = fieldnameflatten(Vector, model)
         parents = parentflatten(Vector, model)
+        backcolors = hex.(colorforeach(parents))
         limits = metaflatten(Vector, model, FieldMetadata.limits)
         descriptions = metaflatten(Vector, model, FieldMetadata.description)
         unts = metaflatten(Vector, model, FieldMetadata.units)
         log = metaflatten(Vector, model, FieldMetadata.logscaled)
-        attributes = broadcast((p, n, d, u) -> Dict(:title => "$p.$n: $d $(u == nothing ? "" : u)"), parents, fnames, descriptions, unts)
+        attributes = broadcast((p, b, n, d, u) -> Dict(:title => "$p.$n: $d $(u == nothing ? "" : u)"), parents, backcolors, fnames, descriptions, unts)
         sl = broadcast(limits, fnames, params, attributes, log, unts) do l, n, p, a, lg, u
             # println((l, n, p, a, lg))
             # Use a log range if specified in metadata
@@ -305,7 +287,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         map!((x...) -> [x...], paramobs, throttle.(throt, observe.(sl))...)
 
         solplotobs[] = sol_plot(modelobs[], paramobs[], stateobs[], tstopobs[], envstartobs[], app)
-        sl
+        [dom"div[style=background-color:#$(backcolors[i])]"(sl) for (i, sl) in enumerate(sl)]
     end
 
     make_statesliders(m) = begin
@@ -351,16 +333,21 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(s -> spreadwidgets(s), parambox, paramsliders)
     map!(s -> spreadwidgets(s), statebox, statesliders)
 
-    map!(make_plot, plotobs, modelobs, stateobs[], solplotobs, varobs, envobs, 
+    map!(make_plot, plotobs, modelobs, stateobs[], solplotobs, varobs, envobs,
          fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs[])
     map!(sol_plot, solplotobs, modelobs, paramobs, stateobs, tstopobs, envstartobs, app)
 
-    modelobs[] = modeldrop[]
+    modelobs[] = load_model(modeldrop[], envdrop[])
 
     ui = vbox(hbox(reload, dropbox), controlbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
     # dom"div"()
 end
 
+function colorforeach(parents)
+    parentlist = union(parents)
+    pallete = get(ColorSchemes.pastel, 0:(1/length(parentlist)):1)
+    [pallete[indexin([parent], parentlist)[1]] for parent in parents]
+end
 
 state_slider(label, val) =
     slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=label, value=val)
@@ -388,6 +375,6 @@ webapp(app; port=8000) = webio_serve(page("/", req -> app(req)), port)
 
 savecode(app, name) = begin
     lines = split("models[:$name] = " * codify(app.savedmodel), "\n")
-    code = join([lines[1], "    environment = environments[:tas],", lines[2:end]...], "\n")
+    code = join([lines[1], "    environment = first(values(environments)),", lines[2:end]...], "\n")
     write("models/$name.jl", code)
 end

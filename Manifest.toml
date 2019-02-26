@@ -112,6 +112,12 @@ repo-url = "https://github.com/rafaqz/Codify.jl"
 uuid = "67e8a8f0-3181-11e9-0720-1d07a4d049a5"
 version = "0.1.0"
 
+[[ColorSchemes]]
+deps = ["Colors", "Test"]
+git-tree-sha1 = "9a2c3afe9d6253c1e71931abfc258ccc99795ad3"
+uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+version = "3.1.0"
+
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random", "Test"]
 git-tree-sha1 = "f73b0e10f2a5756de7019818a41654686da06b09"
@@ -245,10 +251,8 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.6.0"
 
 [[DynamicEnergyBudgets]]
-deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "LinearAlgebra", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Test", "Unitful"]
-git-tree-sha1 = "19255955d0e6c342378f6b0df89ac3a369659b92"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
+deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Unitful"]
+path = "/home/raf/julia/DynamicEnergyBudgets/"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
 version = "0.0.0"
 
@@ -649,10 +653,8 @@ uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 version = "0.10.3"
 
 [[Photosynthesis]]
-deps = ["Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Libdl", "Mixers", "Roots", "Test", "Unitful"]
-git-tree-sha1 = "ebfa86609edb80ff9720ba9adfccc1d81fbc9d2a"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/Photosynthesis.jl"
+deps = ["Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Mixers", "Roots", "Unitful"]
+path = "/home/raf/julia/Photosynthesis/"
 uuid = "5e10c064-2706-53a3-a67d-d473e313a663"
 version = "0.0.0"
 
@@ -797,9 +799,7 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[Select]]
 deps = ["FieldMetadata"]
-git-tree-sha1 = "8fb9969d5059361ed280c7326c3635a8d46f262e"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/Select.jl"
+path = "/home/raf/julia/Select"
 uuid = "9af9b3ce-3316-11e9-0fa8-7b2e06453de4"
 version = "0.1.0"
 
@@ -900,9 +900,9 @@ version = "0.4.0"
 
 [[Tables]]
 deps = ["IteratorInterfaceExtensions", "LinearAlgebra", "Requires", "TableTraits", "Test"]
-git-tree-sha1 = "37be2ed169d5771c1ac8d516d3bcb0093c49966e"
+git-tree-sha1 = "5aa45584645393c1717e0cc1f0362c2ea81470a9"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "0.1.15"
+version = "0.1.17"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
