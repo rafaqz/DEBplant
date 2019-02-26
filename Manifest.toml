@@ -251,8 +251,8 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.6.0"
 
 [[DynamicEnergyBudgets]]
-deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "LinearAlgebra", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Test", "Unitful"]
-git-tree-sha1 = "ea75d503d4a8d2f0f0644dc7a3bc42412572b9d1"
+deps = ["Apply", "AxisArrays", "DataFrames", "Distributions", "DocStringExtensions", "FieldDefaults", "FieldMetadata", "Flatten", "ForwardDiff", "LabelledArrays", "MacroTools", "Microclimate", "Mixers", "OrdinaryDiffEq", "Photosynthesis", "SimpleRoots", "SimpleTraits", "StaticArrays", "Unitful"]
+git-tree-sha1 = "a1e35bfaee216637ddca484f10d4eca2724e070e"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
