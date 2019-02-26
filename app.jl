@@ -90,7 +90,7 @@ function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, e
     plotsize=(1700, 800)
 
     envstart = model.environment_start[]
-    tspan = 1:ustrip(tstop)
+    tspan = 2:ustrip(tstop)
     varplots = plot_selected(model.records, vars, tspan)
     envplots = plot_selected(model.environment, env, ustrip(envstart):ustrip(envstart+tstop))
     fluxplots = []
@@ -106,7 +106,6 @@ function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, e
     organs = define_organs(model, 1hr)
     o = organs[1]
     state = split_state(organs, u, 0)
-
     subplots = []
 
     plottemp && push!(subplots, plot(x -> tempcorr(x, tempcorr_pars(o)), K(0.0°C):1.0K:K(50.0°C),

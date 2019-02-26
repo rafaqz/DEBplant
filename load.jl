@@ -30,7 +30,7 @@ set_allometry(model, state) = begin
     model
 end
 
-assimvars(::AbstractCAssim, tstop) = DynamicEnergyBudgets.ShootVars()
+assimvars(::AbstractCAssim) = DynamicEnergyBudgets.ShootVars()
 assimvars(::AbstractNAssim) = DynamicEnergyBudgets.RootVars()
 assimvars(::FvCBPhotosynthesis) = DynamicEnergyBudgets.FvCBShootVars()
 
