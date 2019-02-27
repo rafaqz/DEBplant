@@ -99,33 +99,3 @@ plant = [0.0, 1e-2, 0.0, 1e-2, 1e-2, 1e-2, 0.0, 1e-2, 0.0, 1.0, 0.05, 0.0]mol
 states = Dict(:smallseed => smallseed, :largeseed => largeseed, :plant => plant)
 
 monthlyplotall(models[:maturity], environments, states, envstart)
-
-module DocsCheck
-
-using DocStringExtensions
-
-@template TYPES =
-    """
-    $(TYPEDEF)
-    $(DOCSTRING)
-    """
-
-
-macro documentbreaker(ex)
-    :(Base.@__doc__ $(esc(ex)))
-end
-
-"Docs don't show typedef"
-@documentbreaker struct BrokenDocs <: AbstractString 
-    s::String
-end
-
-
-"Docs show typedef ^"
-struct WorkingDocs <: AbstractString 
-    s::String
-end
-
-end
-
-DocsCheck.WorkingDocs

@@ -17,7 +17,7 @@ const STATELABELS = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Ro
 loadenvironments(dir) = begin
     locationspath = joinpath(dir, "microclimate/locations.jld")
     @load locationspath t1 t2 t3 t4
-    environments = OrderedDict(:t1 => t1, :t2 => t2, :t3 => t3, :t4 => t4)
+    environments = OrderedDict(:t1 => t1, :t2 => t2, :t3 => t3)
     env = t1
     tspan = (0:1:length(radiation(env)) - 1) * hr
     environments, tspan
@@ -25,8 +25,12 @@ end
 
 # The zero crossing of allometry is the seed size.
 set_allometry(model, state) = begin
-    @set! model.params[1].allometry_pars.β0 = state[2] * w_V(model.shared)
-    @set! model.params[2].allometry_pars.β0 = state[8] * w_V(model.shared)
+    if :β0 in fieldnames(typeof(model.params[1].allometry_pars))
+        model = @set model.params[1].allometry_pars.β0 = state[2] * w_V(model.shared) * 0.999999
+    end
+    if :β0 in fieldnames(typeof(model.params[2].allometry_pars))
+        model = @set model.params[2].allometry_pars.β0 = state[8] * w_V(model.shared) * 0.999999
+    end
     model
 end
 

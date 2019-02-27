@@ -46,7 +46,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     model.records = m2.records
     model.environment_start[] = envstart
     model.dead[] = false
-    set_allometry(model, u)
+    model = set_allometry(model, u)
     # println("vars: ", model.records[1].vars.rate)
 
     app.savedmodel = model
