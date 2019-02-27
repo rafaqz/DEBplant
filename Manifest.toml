@@ -308,6 +308,12 @@ repo-url = "https://github.com/rafaqz/Flatten.jl"
 uuid = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
 version = "0.1.0"
 
+[[Formatting]]
+deps = ["Compat"]
+git-tree-sha1 = "289003271ce9c8194c1ce56a3c433f1c51841125"
+uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
+version = "0.3.5"
+
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
 git-tree-sha1 = "4c4d727f1b7e0092134fabfab6396b8945c1ea5b"
@@ -543,7 +549,7 @@ version = "0.3.0"
 
 [[Microclimate]]
 deps = ["NCDatasets", "Unitful"]
-git-tree-sha1 = "a97222ae8667c2bb91744c69d262e1d054426e20"
+git-tree-sha1 = "6083510a7e11b2cb0369a5d67f4c3d2480b7eb08"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Microclimate.jl"
 uuid = "e0eb800d-4a9f-54ae-b0f8-217228d9d7c3"
@@ -611,6 +617,12 @@ deps = ["Distances", "LinearAlgebra", "Mmap", "StaticArrays", "Test"]
 git-tree-sha1 = "f47c5d97cf9a8caefa47e9fa9d99d8fda1a65154"
 uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
 version = "0.4.3"
+
+[[NetCDF]]
+deps = ["BinDeps", "CondaBinDeps", "Formatting", "Libdl", "Random", "Test"]
+git-tree-sha1 = "0cf8e9276c5c426e43dad43863a4e86d6ce62c17"
+uuid = "30363a11-5582-574a-97bb-aa9a979735b9"
+version = "0.7.2"
 
 [[Observables]]
 deps = ["Test"]

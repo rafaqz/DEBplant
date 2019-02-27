@@ -1,92 +1,69 @@
-using Revise
-using JLD2, LabelledArrays
-using Unitful: mol,m
-using Distributed
+dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
+include(joinpath(dir, "load.jl"))
+include(joinpath(dir, "plantstates.jl"))
 
-@everywhere Microclimate, Unitful, DynamicEnergyBudgets
+using DynamicEnergyBudgets: dead
 
-basepath = ENV["MICROCLIM"]
+runsims(i, model, smallseed, largeseed, plant, envgrid, tstop) =
+    if ismissing(masklayer[i]) 
+        missing
+    else
+        println(i)
+        model = @set model.environment = MicroclimPoint(envgrid, i)
+        model.dead[] = false
+        model = set_allometry(model, smallseed)
+        sol = discrete_solve(model, smallseed, tstop)
+        smallseed_sol = dead(model) ? zero(sol) : sol
+        model.dead[] = false
+        model = set_allometry(model, largeseed)
+        sol = discrete_solve(model, largeseed, tstop)
+        largeseed_sol = dead(model) ? zero(sol) : sol
+        model.dead[] = false
+        sol = discrete_solve(model, plant, tstop)
+        plant_sol = dead(model) ? zero(sol) : sol
+        # println(dead(model) ? "dead" : "alive")
+        smallseed_sol, largeseed_sol, plant_sol 
+    end
+
+basepath = "/home/raf/Data/microclim"
 years = 2001
 shade = 0
-i = CartesianIndex(20,20)
+i = CartesianIndex(65,35)
 
-@everywhere envgrid = load_grid(basepath, years, shade)
-envpoint = MicroclimPoint(envgrid, CartesianIndex(20,20))
+# Import environments 
+environments, tspan = loadenvironments(dir)
 
-
-
-@everywhere model = uimodel;
+# Import models
+models = OrderedDict()
+modeldir = joinpath(dir, "models")
+include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+model = deepcopy(models[:maturity]);
 model.environment_start[] = oneunit(model.environment_start[])
-statelabs = Symbol.((string.(STATE) .* "S"..., string.(STATE) .* "R"...))
-initstate = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 10, 2, 0.0] * mol
-u = LArray{statelabs}(initstate)
 
-discrete_solve(model, u, tstop) = begin
-    prob = DiscreteProblem(model, u, (one(tstop), tstop) .* hr)
-    solve(prob, FunctionMap(scale_by_time = true))
-end
+skipped = (:snowdepth, :soilwatercontent, :relhumidity, :windspeed) 
+envgrid = load_grid(basepath, years, shade)
+masklayer = radiation(envgrid)[1][:,:,1]
 
+envpoint = MicroclimPoint(envgrid, i)
+tstop = (length(radiation(envpoint))-1)hr
+u = zeros(12)mol
+labels = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
+ulabelled = LArray{labels}(u)
 
-masklayer = snowdepth(envgrid)[1][:,:,1]
-tstop = length(radiation(envpoint))-1
-sol = discrete_solve(model, u, tstop)
+env = MicroclimPoint(envgrid, i)
+airtemperature(env)
+model.records[1].vars.temp
 
-@everywhere begin
-    tstop = length(radiation(envpoint))-1
-    u = zeros(12)mol
-    labels = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
-    ulabelled = LArray{labels}(u)
+sims = runsims.(CartesianIndices(masklayer), Ref.((model, smallseed, largeseed, plant, envgrid, tstop))...);
 
-    seed = copy(ulabelled)
-    seed.VS = 1e-4mol 
-    seed.CS = 1e-4mol 
-    seed.NS = 1e-4mol 
-    seed.VR = 1e-4mol 
-    seed.CR = 0.01mol
-    seed.NR = 0.0005mol
+gr()
 
-    plant = copy(ulabelled)
-    plant.VS = 10mol 
-    plant.CS = 5mol
-    plant.NS = 0.5mol
-    plant.VR = 10mol
-    plant.CR = 5mol
-    plant.NR = 0.5mol
-end
-
-u = seed
-
-envstart = 1.0hr
-
-function runsims(i, model, plant, seed, ulabelled, envgrid) 
-    if !ismissing(masklayer[i]) 
-        println(i)
-        model.environment = MicroclimPoint(envgrid, i)
-        model.dead[] = false
-        try
-            sol = discrete_solve(model, seed, tstop)
-        catch
-            seed_solutions = copy(ulabelled)
-        finally
-            seed_solutions = DynamicEnergyBudgets.dead(model) ? zero(sol.u[end]) : sol.u[end]
-        end
-        try
-            sol = discrete_solve(model, plant, tstop)
-        catch
-            plant_solutions = copy(ulabelled)
-        finally
-            plant_solutions = DynamicEnergyBudgets.dead(model) ? zero(sol.u[end]) : sol.u[end]
-        end
-        # println("Dead?: ", model.dead[], sol.u[end])
-    end
-    seed_solutions, plant_solutions 
-end
-
-@distributed for i in CartesianIndices(masklayer) 
-    runsims(i, model, plant, seed, ulabelled, envgrid) 
-end
-
-structure = map(s -> ismissing(s) ? s : s.VS, solutions) 
-structure1 = replace(structure, missing => 0mol) ./ mol 
-maximum(structure1)
-heatmap(permutedims(structure1[1:end,end:-1:1]))
+structure = replace(map(s -> ismissing(s) ? s : s[1][2], sims), missing => 0mol) ./ mol 
+heatmap(permutedims(structure[1:end,end:-1:1]), size=(600,400), dpi=100)
+savefig("plots/smallseed_aus.png")
+structure = replace(map(s -> ismissing(s) ? s : s[2][2], sims), missing => 0mol) ./ mol 
+heatmap(permutedims(structure[1:end,end:-1:1]), size=(600,400), dpi=100)
+savefig("plots/largeseed_aus.png")
+structure = replace(map(s -> ismissing(s) ? s : s[3][2], sims), missing => 0mol) ./ mol 
+heatmap(permutedims(structure[1:end,end:-1:1]), size=(600,400), dpi=100)
+savefig("plots/plant_aus.png")
