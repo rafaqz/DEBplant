@@ -202,7 +202,8 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     plotphoto = checkbox("Plot Photosynthesis")
     plotpot = checkbox("Plot Potential dependence")
 
-    controlbox = hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plottemp, plotscale, plotphoto, plotpot, plotly, gr)
+    controlbox = vbox(subtitle("Controls"), hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plotly, gr))
+    funcbox = vbox(subtitle("Plot Functions"), hbox(plottemp, plotscale, plotphoto, plotpot))
 
     reload = button("Reload")
 
@@ -213,10 +214,10 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     selectables = select(modelobs[])
     drops = []
     for (typ, def, lab) in selectables
-        push!(drops, dropdown([allsubtypes(typ)...], value=def, label=lab))
+        push!(drops, dropdown([allsubtypes(typ)...], value=def, label=string(lab)))
     end
     half = length(drops) ÷ 2
-    dropbox = vbox(hbox(drops[1:half]...), hbox(drops[half+1:end]...))
+    dropbox = vbox(subtitle("Model Components"), hbox(drops[1:half]...), hbox(drops[half+1:end]...))
     getindex.(drops)
 
     solplotobs = Observable{Any}([plot(), plot()])
@@ -253,11 +254,11 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     paramobs = Observable{Vector{Any}}([]);
     parambox = Observable{typeof(dom"div"())}(dom"div"());
 
-    varchecks = Observable{Vector{Widget{:checkbox}}}(Widget{:checkbox}[]);
+    varchecks = Observable{Vector{Any}}(Widget{:checkbox}[]);
     varobs = Observable{Vector{Bool}}(Bool[]);
     varbox = Observable{typeof(dom"div"())}(dom"div"());
 
-    envchecks = Observable{Vector{Widget{:checkbox}}}(Widget{:checkbox}[]);
+    envchecks = Observable{Vector{Any}}(Widget{:checkbox}[]);
     envobs = Observable{Vector{Bool}}(Bool[]);
     envbox = Observable{typeof(dom"div"())}(dom"div"());
 
@@ -312,7 +313,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
     flux_grids = (make_grid(STATE, TRANS), make_grid(STATE1, TRANS1,),
                   make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
-    fluxbox = hbox(arrange_grid.(flux_grids)...)
+    fluxbox = vbox(subtitle("Plot Internal Flux"), hbox(arrange_grid.(flux_grids)...))
     fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
 
     tstopobs = map(throttle(throt, observe(tstoptext))) do t
@@ -326,11 +327,13 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(make_envchecks, envchecks, modelobs)
     map!(make_statesliders, statesliders, modelobs)
 
-    map!(c -> vbox(hbox(c...)), varbox, varchecks)
-    halfenv = min(12, length(envchecks[]))
-    map!(c -> vbox(hbox(c[1:halfenv]...), hbox(c[halfenv+1:end]...)), envbox, envchecks)
-    map!(s -> spreadwidgets(s), parambox, paramsliders)
-    map!(s -> spreadwidgets(s), statebox, statesliders)
+    map!(c -> vbox(subtitle("Plot Variables"), hbox(vbox.(c)...)), varbox, varchecks)
+    map!(envbox, envchecks) do c 
+        halfenv = min(12, length(c))
+        vbox(subtitle("Plot Environment"), hbox(c[1:halfenv]...), hbox(c[halfenv+1:end]...)) 
+    end
+    map!(s -> vbox(subtitle("Model Parameters"), spreadwidgets(s)), parambox, paramsliders)
+    map!(s -> vbox(subtitle("Init State"), spreadwidgets(s)), statebox, statesliders)
 
     map!(make_plot, plotobs, modelobs, stateobs[], solplotobs, varobs, envobs,
          fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs[])
@@ -338,9 +341,11 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
     modelobs[] = load_model(modeldrop[], envdrop[])
 
-    ui = vbox(hbox(reload, dropbox), controlbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
+    ui = vbox(hbox(reload, dropbox), controlbox, funcbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
     # dom"div"()
 end
+
+subtitle(x) = dom"h4.subtitle.is-4"(x)
 
 function colorforeach(parents)
     parentlist = union(parents)
@@ -349,7 +354,7 @@ function colorforeach(parents)
 end
 
 state_slider(label, val) =
-    slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=label, value=val)
+slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=string(label), value=val)
 
 make_grid(rownames, colnames) = begin
     rows = length(rownames)
