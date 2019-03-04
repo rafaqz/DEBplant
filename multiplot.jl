@@ -2,7 +2,7 @@ dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
 
-const month_hours = 365.25 / 12 * 24hr
+const MONTH_HOURS = 365.25 / 12 * 24hr
 
 import Base: round
 round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val))
@@ -29,8 +29,8 @@ function monthlyplot(title, model, u, envstart)
         println("month: ", i)
         envstart += month_hours
         # Round to the start of a day
-        envstart = round(typeof(1hr), round(typeof(1d), envstart)) + 1hr
-        solplot!(plt, model, u, envstart)
+        envstart_hour = round(typeof(1hr), round(typeof(1d), envstart)) + 1hr
+        solplot!(plt, model, u, envstart_hour)
         yield()
     end
     plot(plt, plot_title=title, xlab="Time in hours", ylab="Structural biomass in grams (roots shown as negative)",
