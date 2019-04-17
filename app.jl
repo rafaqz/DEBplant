@@ -2,6 +2,7 @@ using Revise, Setfield, InteractBulma, InteractBase, Blink, WebIO, Observables, 
 using Plots, UnitfulPlots, StatsPlots, PlotNested, Codify, Select, ColorSchemes
 
 include(joinpath(dir, "load.jl"))
+include(joinpath(dir, "plantstates.jl"))
 include(joinpath(dir, "util/hide.jl"))
 
 const STATELABELS = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
@@ -15,7 +16,7 @@ end
 
 init_state(modelobs::Observable) = init_state(modelobs[])
 init_state(model) = init_state(has_reserves.(define_organs(model, 1hr)))
-init_state(::NTuple{2,HasCN}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 0.01, 0.0005, 0.0]mol
+init_state(::NTuple{2,HasCN}) = [largeseed...]
 init_state(::NTuple{2,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 0.01]mol
 
 plotly()
@@ -23,7 +24,7 @@ plotly()
 
 pot(p, x) = potential_dependence(p.potential_modifier, x)
 
-photo(o, u, x) = photo(assimilation_vars(o), o, u, x)
+photo(o, u, x) = photo(assimilation_pars(o).vars, o, u, x)
 photo(v::CarbonVars, o, u, x) = begin
     v.J_L_F = x*parconv
     v.soilwaterpotential = zero(v.soilwaterpotential)
@@ -54,13 +55,13 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     # println("u, tstop: ", (ustrip(u), ustrip(tstop)))
     # println("num params: ", length(params))
     prob = DiscreteProblem{true}(model, ustrip(u), (one(tstop), ustrip(tstop)))
-    local sol
-    try
+    # local sol
+    # try
         sol = solve(prob, FunctionMap(scale_by_time = true))
-    catch e
-        println(e)
-        return plot(), plot()
-    end
+    # catch e
+        # println(e)
+        # return plot(), plot()
+    # end
     solplot1 = plot(sol, vars = [1:6...], plotdensity=400, legend=:topleft,
                     labels=reshape([STATELABELS[1:6]...], 1, 6), ylabel="State (CMol)",
                     xlabel=string(model.params[1].name, " : ",  typeof(model.params[1].assimilation_pars).name, " - time (hr)"))
@@ -86,7 +87,7 @@ end
 
 
 function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, env, flux,
-                   plottemp::Bool, plotscale::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number)
+                   plottemp::Bool, plotshape::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number)
     plotsize=(1700, 800)
 
     envstart = model.environment_start[]
@@ -108,9 +109,9 @@ function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, e
     state = split_state(organs, u, 0)
     subplots = []
 
-    plottemp && push!(subplots, plot(x -> tempcorr(x, tempcorr_pars(o)), K(0.0°C):1.0K:K(50.0°C),
+    plottemp && push!(subplots, plot(x -> tempcorr(tempcorr_pars(o), x), K(0.0°C):1.0K:K(50.0°C),
                                      legend=false, ylabel="Correction", xlabel="°C"))
-    plotscale && push!.(Ref(subplots), plot_shape.(model.params))
+    plotshape && push!.(Ref(subplots), plot_shape.(model.params))
     plotphoto && push!(subplots, plot(x -> photo(o, state[1], x), (0*W*m^-2:5*W*m^-2:1000*W*m^-2),
                                       ylabel="C uptake", xlabel="Irradiance"))
     plotpot && push!(subplots, plot(x -> pot(assimilation_pars(o), x), (0.0kPa:-10.0kPa:-5000kPa),
@@ -127,8 +128,8 @@ function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, e
     end
 end
 
-plot_shape(p) = plot(x -> shape_correction(p.shape_pars, x), (0.0mol:0.01mol:100.0mol),
-                       legend=false, ylabel="Correction", xlabel="CMols Stucture")
+plot_shape(p) = plot(x -> shape_correction(p.shape_pars, x), (0.0mol:0.01mol:10.0mol),
+                     ylims=(0.0, 1.0), legend=false, ylabel="Correction", xlabel="CMols Stucture")
 
 plot_fluxes!(plots, obs, J, tspan) = begin
     ps = []
@@ -187,7 +188,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     envobs = Observable{Any}(env);
 
 
-    tstoptext = textbox(value="8760", label="Timespan")
+    tstoptext = textbox(value=string(tspan.stop), label="Timespan")
     envstart = slider(1hr:1hr:tspan.stop, value = 1hr, label="Environment start time")
     envdrop = dropdown(app.environments, value=env, label="Environment")
     modeldrop = dropdown(app.models, value=app.models[:init], label="Model")
@@ -198,12 +199,12 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     savename = textbox(value="modelname", label="Save name")
 
     plottemp = checkbox("Plot TempCorr")
-    plotscale = checkbox("Plot Scaling Function")
+    plotshape = checkbox("Plot Scaling Function")
     plotphoto = checkbox("Plot Photosynthesis")
     plotpot = checkbox("Plot Potential dependence")
 
     controlbox = vbox(subtitle("Controls"), hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plotly, gr))
-    funcbox = vbox(subtitle("Plot Functions"), hbox(plottemp, plotscale, plotphoto, plotpot))
+    funcbox = vbox(subtitle("Plot Functions"), hbox(plottemp, plotshape, plotphoto, plotpot))
 
     reload = button("Reload")
 
@@ -233,8 +234,8 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     end
 
     load_model(m, e) = begin
-        m = update_vars(m, 87600)
-        m.environment = e
+        m = update_vars(m, 8760*11)
+        m = @set m.environment = e
         # Update all the component dropdowns
         setindex!.(drops, getindex.(select(m), 2))
         app.savedmodel = m
@@ -278,7 +279,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         log = metaflatten(Vector, model, FieldMetadata.logscaled)
         attributes = broadcast((p, b, n, d, u) -> Dict(:title => "$p.$n: $d $(u == nothing ? "" : u)"), parents, backcolors, fnames, descriptions, unts)
         sl = broadcast(limits, fnames, params, attributes, log, unts) do l, n, p, a, lg, u
-            # println((l, n, p, a, lg))
+            println((l, n, p, a, lg))
             # Use a log range if specified in metadata
             rnge = lg ? vcat(exp10.(range(log10(abs(l[1])), stop=sign(log10(abs(l[2]))) , length=100) * sign(l[2])) * l[2]) : collect(l[1]:(l[2]-l[1])/100:l[2])
             InteractBase.slider(rnge, label=string(n), value=p, attributes=a)
@@ -328,15 +329,15 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(make_statesliders, statesliders, modelobs)
 
     map!(c -> vbox(subtitle("Plot Variables"), hbox(vbox.(c)...)), varbox, varchecks)
-    map!(envbox, envchecks) do c 
+    map!(envbox, envchecks) do c
         halfenv = min(12, length(c))
-        vbox(subtitle("Plot Environment"), hbox(c[1:halfenv]...), hbox(c[halfenv+1:end]...)) 
+        vbox(subtitle("Plot Environment"), hbox(c[1:halfenv]...), hbox(c[halfenv+1:end]...))
     end
-    map!(s -> vbox(subtitle("Model Parameters"), spreadwidgets(s)), parambox, paramsliders)
+    map!(s -> vbox(subtitle("Model Parameters (and some variables)"), spreadwidgets(s)), parambox, paramsliders)
     map!(s -> vbox(subtitle("Init State"), spreadwidgets(s)), statebox, statesliders)
 
     map!(make_plot, plotobs, modelobs, stateobs[], solplotobs, varobs, envobs,
-         fluxobs, observe(plottemp), observe(plotscale), observe(plotphoto), observe(plotpot), tstopobs[])
+         fluxobs, observe(plottemp), observe(plotshape), observe(plotphoto), observe(plotpot), observe(tstopobs))
     map!(sol_plot, solplotobs, modelobs, paramobs, stateobs, tstopobs, envstartobs, app)
 
     modelobs[] = load_model(modeldrop[], envdrop[])
@@ -379,6 +380,10 @@ webapp(app; port=8000) = webio_serve(page("/", req -> app(req)), port)
 
 savecode(app, name) = begin
     lines = split("models[:$name] = " * codify(app.savedmodel), "\n")
-    code = join([lines[1], "    environment = first(values(environments)),", lines[2:end]...], "\n")
+    code = join([lines[1], 
+                 "    environment = first(values(environments)),", 
+                 "    time = 0hr:1hr:8760hr*2,", 
+                 lines[2:end]...], 
+                "\n")
     write("models/$name.jl", code)
 end

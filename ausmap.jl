@@ -1,7 +1,7 @@
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
-using Statistics
+using Statistics, Shapefile, GraphRecipes, StatsBase
 
 import Base: round
 round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val))
@@ -58,7 +58,7 @@ const LABELS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
 const MONTH_HOURS = 365.25 / 12 * 24hr
 
 basepath = "/home/raf/Data/microclim"
-years = 2001:2002
+years = 2001:2010
 shade = 0
 i = CartesianIndex(65,35)
 
@@ -69,12 +69,17 @@ environments, tspan = loadenvironments(dir)
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-model = deepcopy(models[:maturity]);
+model = deepcopy(models[:init]);
 model.environment_start[] = oneunit(model.environment_start[])
 yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
 
+shp = open(joinpath(basepath, "ausborder/ausborder_polyline.shp")) do ausborder
+    read(ausborder)
+end
+# plot(shp)
+
 extract(yo, n) = [ismissing(yo[1][i]) ? 0.0 : sum_yo(yo, i, n) for i in ind]
-sum_yo(yo, i, n) = mean((sum_VS(yo[x][i][n]) for x in eachindex(yo)))
+sum_yo(yo, i, n) = minimum((sum_VS(yo[x][i][n]) for x in eachindex(yo)))
 sum_VS(a) = mean((ustrip(la.VS) for la in a))
 
 ind = CartesianIndices(yearly_outputs[1])
@@ -84,11 +89,7 @@ plant_out = extract(yearly_outputs, 3)
 
 # Plot
 gr()
-heatmap(rotl90(plant_out), size=(600,400), dpi=100)
-# savefig("plots/plant_aus.png")
-heatmap(rotl90(smallseed_out), size=(600,400), dpi=100)
-# savefig("plots/smallseed_aus.png")
-heatmap(rotl90(largeseed_out), size=(600,400), dpi=100) 
-# savefig("plots/largeseed_aus.png")
+maps = plot(heatmap.(rotl90.((smallseed_out, largeseed_out, plant_out)))..., layout=(1,3), size=(1200,300), dpi=100)
+savefig("plots/spreadmaps.png")
 
-permutedims(plant_out, (2,1))
+# permutedims(plant_out, (2,1))

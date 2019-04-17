@@ -1,10 +1,10 @@
 # Use a set script path otherwise the current working directory
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
-
 # Load the app scripts
 include(joinpath(dir, "app.jl"))
-# Import environments 
+ # Import environments 
 environments, tspan = loadenvironments(dir)
+environments[:controls] = MicroclimControl()
 
 # Import models
 models = OrderedDict()
@@ -16,6 +16,8 @@ app = ModelApp(models, environments, tspan, nothing);
 
 # Electron desktop app
 electronapp(app; zoom=0.5)
+
+
 
 # Save the code for the current state of the model in the app 
 # It will be loaded automatically the next time this script is run

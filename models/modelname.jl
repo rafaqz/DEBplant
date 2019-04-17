@@ -1,4 +1,4 @@
-models[:init] = Plant(
+models[:modelname] = Plant(
     environment = first(values(environments)),
     time = 0hr:1hr:8760hr*2,
     params = (
@@ -23,7 +23,7 @@ models[:init] = Plant(
             ),
             shape_pars = Plantmorph(
                 M_Vref = 0.2834948325853611u"mol",
-                M_Vscaling = 33.36201074400118u"mol",
+                M_Vscaling = 26.438822969320576u"mol",
             ),
             allometry_pars = Allometry(
                 β1 = 0.1u"m",
@@ -42,7 +42,7 @@ models[:init] = Plant(
             ),
             shape_pars = Plantmorph(
                 M_Vref = 0.32595016692412887u"mol",
-                M_Vscaling = 9.283177667225555u"mol",
+                M_Vscaling = 10.428016575999369u"mol",
             ),
             allometry_pars = Allometry(
                 β1 = 1.321941148466029u"m",
@@ -59,7 +59,7 @@ models[:init] = Plant(
         su_pars = ParallelComplementarySU(),
         core_pars = DEBCore(
             y_V_E = 0.9,
-            y_E_EC = 0.7000003,
+            y_E_EC = 0.8000002,
             y_E_EN = 30.0,
             n_N_V = 0.03,
             n_N_E = 0.025,
@@ -77,7 +77,7 @@ models[:init] = Plant(
             k = 0.35u"d^-1",
         ),
         maintenance_pars = Maintenance(
-            j_E_mai = 0.0049770235643321085u"d^-1",
+            j_E_mai = 0.0054622772176843425u"d^-1",
         ),
     ),
 )

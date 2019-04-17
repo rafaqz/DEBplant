@@ -12,7 +12,7 @@ smallseed.NR = 0.05mg / (25.0g/mol)
 largeseed = copy(ulabelled)
 largeseed.VS = 1e-1mg  / (25.0g/mol)
 largeseed.CS = 1e-1mg  / (25.0g/mol)
-largeseed.NS = 1e-1mg  / (25.0g/mol)
+largeseed.NS = 1e-2mg  / (25.0g/mol)
 largeseed.VR = 1e-1mg  / (25.0g/mol)
 largeseed.CR = 100.0mg / (25.0g/mol)
 largeseed.NR = 5.0mg   / (25.0g/mol)
@@ -25,5 +25,5 @@ plant.VR = 5.0g   / (25.0g/mol)
 plant.CR = 5.0g   / (25.0g/mol)
 plant.NR = 0.5g   / (25.0g/mol)
 
-states = Dict(:smallseed => smallseed, :largeseed => largeseed, :plant => plant);
+states = OrderedDict(:plant => plant, :largeseed => largeseed, :smallseed => smallseed);
 nothing

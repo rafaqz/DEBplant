@@ -20,10 +20,10 @@ include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 
 organism = models[:init];
 organism = models[:maturity];
-organism = update_vars(models[:fvcb]);
+organism = models[:fvcb];
+organism = app.savedmodel
 v = organism.records[1].vars
 organism.environment = environments[:t1];
-modelobs = Ref(DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr"));
 organism = DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.PlantCN(environment=env, time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
@@ -31,6 +31,11 @@ organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(environment=env, time=t);
 organism(du, u, nothing, 10u"hr")
 organism(du, u, nothing, 1)
+fieldnames(typeof(organism.params[1].assimilation_pars))
+
+organism
+
+organism.records[1].vars.height
 
 organs = define_organs(organism, 1hr)
 o = organs[1]
