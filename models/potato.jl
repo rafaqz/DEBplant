@@ -38,7 +38,7 @@ models[:potato] = Plant(
         Params(
             rate_formula = FZeroRate(),
             assimilation_pars = ConstantNAssim(
-                uptake = 0.2u"μmol*mol^-1*s^-1",
+                n_uptake = 0.2u"μmol*mol^-1*s^-1",
             ),
             shape_pars = Plantmorph(
                 M_Vref = 0.32595016692412887u"mol",
@@ -66,7 +66,7 @@ models[:potato] = Plant(
             w_V = 25.0u"g*mol^-1",
         ),
         feedback_pars = StructuralLossAutophagy(
-            K_autophagy = 8.697490026177835e-6u"mol",
+            K_autophagy = 8.697490026177835e-6,
         ),
         tempcorr_pars = ParentTardieu(
             ΔH_A = 63.5u"kJ*mol^-1",

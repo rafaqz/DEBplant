@@ -4,7 +4,6 @@ using Unitful, Microclimate, DataStructures, Flatten, FieldMetadata,
       DataStructures, Plots, ColorSchemes, UnitfulPlots, JLD2
 
 import Plots:px, pct, GridLayout
-using Photosynthesis: potential_dependence
 using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, shape_correction, define_organs,
       photosynthesis, split_state, HasCN, HasCNE, has_reserves, tempcorr_pars,
       assimilation_pars, parconv, w_V, build_vars, allometry_pars
@@ -42,13 +41,16 @@ end
 
 function discrete_solve(model, u0, tstop)
     u = deepcopy(u0)
+    mx = deepcopy(u0)
     du = u ./ unit(tstop)
     for i = 2oneunit(tstop):oneunit(tstop):tstop
         model(du, u, nothing, i)
         model.dead[] && break
         u .+= du .* unit(tstop)
+        mx = max.(mx, u)
     end
-    u
+    # Return the maximum values
+    mx
 end
 
 # function discrete_solve(model, u, tstop)

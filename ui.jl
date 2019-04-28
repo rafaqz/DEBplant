@@ -10,16 +10,14 @@ environments[:controls] = MicroclimControl()
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+plotsize = (2000, 1000)
 
 # Build the app interface
-app = ModelApp(models, environments, tspan, nothing);
+app = ModelApp(models, environments, plotsize, tspan, nothing);
 
 # Electron desktop app
 electronapp(app; zoom=0.5)
 
 
-
 # Save the code for the current state of the model in the app 
-# It will be loaded automatically the next time this script is run
-# Choose a new name if this is a different model, leave if it's an update
 # savecode(app, "maturity")

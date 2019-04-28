@@ -7,9 +7,10 @@ include(joinpath(dir, "util/hide.jl"))
 
 const STATELABELS = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
 
-mutable struct ModelApp{M,E,T}
+mutable struct ModelApp{M,E,PS,T}
     models::M
     environments::E
+    plotsize::PS
     tspan::T
     savedmodel
 end
@@ -22,19 +23,19 @@ init_state(::NTuple{2,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0
 plotly()
 
 
-pot(p, x) = potential_dependence(p.potential_modifier, x)
+pot(p, x) = 1 #potential_dependence(p.potential_modifier, x)
 
 photo(o, u, x) = photo(assimilation_pars(o).vars, o, u, x)
 photo(v::CarbonVars, o, u, x) = begin
-    v.J_L_F = x*parconv
+    v.J_L_F = x * parconv
     v.soilwaterpotential = zero(v.soilwaterpotential)
     photosynthesis(assimilation_pars(o), o, u) / (w_V(o) * assimilation_pars(o).SLA)
 end
-photo(v::Photosynthesis.PhotoVars, o, u, x) = begin
+photo(v::EmaxVars, o, u, x) = begin
     v.rnet = x
     v.par = x * parconv
-    run_enbal!(assimilation_pars(o).photoparams, v)
-    v.aleaf * assimilation_pars(o).SLA * w_V(o)
+    enbal!(assimilation_pars(o).photoparams, v)
+    upreferred(v.aleaf * assimilation_pars(o).SLA * w_V(o))
 end
 
 function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVector, tstop::Number, envstart::Number, app)
@@ -87,8 +88,7 @@ end
 
 
 function make_plot(model::AbstractOrganism, u::AbstractVector, solplots, vars, env, flux,
-                   plottemp::Bool, plotshape::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number)
-    plotsize=(1700, 800)
+                   plottemp::Bool, plotshape::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number, plotsize)
 
     envstart = model.environment_start[]
     tspan = 2:ustrip(tstop)
@@ -249,6 +249,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
 
     on(observe(save)) do x
         savecode(app, savename[])
+        models[Symbol(savename[])] = app.savedmodel
     end
 
     paramsliders = Observable{Vector{Any}}(Widget{:slider}[]);
@@ -263,9 +264,10 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     envobs = Observable{Vector{Bool}}(Bool[]);
     envbox = Observable{typeof(dom"div"())}(dom"div"());
 
-    state = init_state(modelobs[])
-    statesliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
-    stateobs = Observable{typeof(state)}(state);
+    state = states["Large Seed"] 
+    statedrop = dropdown(states, value=state, label="Starting state")
+    stateobs = observe(statedrop)
+    statesliders = Observable{Vector{Widget{:slider}}}(state_slider.(STATELABELS, state));
     statebox = Observable{typeof(dom"div"())}(dom"div"());
 
     make_paramsliders(model) = begin
@@ -287,15 +289,8 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         paramobs[] = [s[] for s in sl]
         map!((x...) -> [x...], paramobs, throttle.(throt, observe.(sl))...)
 
-        solplotobs[] = sol_plot(modelobs[], paramobs[], stateobs[], tstopobs[], envstartobs[], app)
+        solplotobs[] = sol_plot(modelobs[], paramobs[], statedrop[], tstopobs[], envstartobs[], app)
         [dom"div[style=background-color:#$(backcolors[i])]"(sl) for (i, sl) in enumerate(sl)]
-    end
-
-    make_statesliders(m) = begin
-        sl = state_slider.(STATELABELS, init_state(m))
-        map!((x...) -> [x...], stateobs, throttle.(throt, observe.(sl))...)
-        stateobs[] = [s[] for s in sl]
-        sl
     end
 
     make_varchecks(model) = begin
@@ -326,7 +321,10 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(make_paramsliders, paramsliders, modelobs)
     map!(make_varchecks, varchecks, modelobs)
     map!(make_envchecks, envchecks, modelobs)
-    map!(make_statesliders, statesliders, modelobs)
+    map!(statesliders, modelobs, observe(statedrop)) do m, s
+        state_slider.(STATELABELS, s) 
+    end
+        
 
     map!(c -> vbox(subtitle("Plot Variables"), hbox(vbox.(c)...)), varbox, varchecks)
     map!(envbox, envchecks) do c
@@ -334,10 +332,10 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         vbox(subtitle("Plot Environment"), hbox(c[1:halfenv]...), hbox(c[halfenv+1:end]...))
     end
     map!(s -> vbox(subtitle("Model Parameters (and some variables)"), spreadwidgets(s)), parambox, paramsliders)
-    map!(s -> vbox(subtitle("Init State"), spreadwidgets(s)), statebox, statesliders)
+    map!(s -> vbox(subtitle("Init State"), hbox(spreadwidgets(s), statedrop)), statebox, statesliders)
 
-    map!(make_plot, plotobs, modelobs, stateobs[], solplotobs, varobs, envobs,
-         fluxobs, observe(plottemp), observe(plotshape), observe(plotphoto), observe(plotpot), observe(tstopobs))
+    map!(make_plot, plotobs, modelobs, statedrop, solplotobs, varobs, envobs,
+         fluxobs, observe(plottemp), observe(plotshape), observe(plotphoto), observe(plotpot), observe(tstopobs), app.plotsize)
     map!(sol_plot, solplotobs, modelobs, paramobs, stateobs, tstopobs, envstartobs, app)
 
     modelobs[] = load_model(modeldrop[], envdrop[])
@@ -355,7 +353,7 @@ function colorforeach(parents)
 end
 
 state_slider(label, val) =
-slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=string(label), value=val)
+    slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=string(label), value=val)
 
 make_grid(rownames, colnames) = begin
     rows = length(rownames)
@@ -385,5 +383,7 @@ savecode(app, name) = begin
                  "    time = 0hr:1hr:8760hr*2,", 
                  lines[2:end]...], 
                 "\n")
-    write("models/$name.jl", code)
+
+    dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
+    write(joinpath(dir, "models/$name.jl"), code)
 end

@@ -4,7 +4,7 @@ include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
 
 const MONTH_HOURS = 365.25 / 12 * 24hr
-YLIMS = (-450,650)
+YLIMS = (-400,600)
 LIFESPAN = 4380
 
 import Base: round
@@ -44,7 +44,7 @@ end
 
 " Plot growth starting every moth in the available timespan"
 function plot_months(title, model, u, envstart; kwargs...)
-    solplots = plot(; ylab=titlecase(string(title)), #ylims=YLIMS,
+    solplots = plot(; ylab=title, ylims=YLIMS,
                     legend=:none, link=:x, kwargs...)
 
     for i in 1:119
@@ -95,11 +95,13 @@ end
 
 
 function plot_single(model, environments, states, envstart)
+    name = "Plant"
     microplots = plot_microclim(model, "T1", 1:1:LIFESPAN; margin=0px)
     model.environment = environments[:t1]
-    solplot = plot(yaxis=("Plant"), legend=:none, link=:x)
-    model, sol = plot_sol!(solplot, model, states[:plant], envstart)
-    rateplot = plot(hcat(model.records[1].vars.rate, model.records[2].vars.rate); yaxis=("Growth rate"))
+    solplot = plot(yaxis=(name), legend=:none, link=:x)
+    model, sol = plot_sol!(solplot, model, states[name], envstart)
+    rateplot = plot(hcat(model.records[1].vars.rate, model.records[2].vars.rate); 
+                    yaxis=("Growth rate"), labels=["Shoot" "Root"])
     assimplot = plot(model.records[1].J[4,1,:]; yaxis=("Assimilation"))
     plt = plot(solplot, rateplot, assimplot, microplots...; xaxis=((0,LIFESPAN), 0:500:4000), link=:x,
          layout=grid(6, 1, heights=[0.3, 0.2, 0.15, 0.15, 0.1, 0.1]), size=(800,600), dpi=100)
@@ -117,7 +119,7 @@ models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 envstart = 1.0hr
-model = models[:init]
+model = models[:ballberry]
 
 plt = plot_single(model, environments, states, envstart);
 

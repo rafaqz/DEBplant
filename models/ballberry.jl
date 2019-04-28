@@ -1,4 +1,4 @@
-models[:modelname] = Plant(
+models[:ballberry] = Plant(
     environment = first(values(environments)),
     time = 0hr:1hr:8760hr*2,
     params = (
@@ -65,8 +65,8 @@ models[:modelname] = Plant(
                 SLA = 24.0u"m^2*kg^-1",
             ),
             shape_pars = Plantmorph(
-                M_Vref = 0.0002u"mol",
-                M_Vscaling = 341.4705294941382u"mol",
+                M_Vref = 0.00026438822969320576u"mol",
+                M_Vscaling = 190.90969133236686u"mol",
             ),
             allometry_pars = Allometry(
                 β1 = 0.093260334688322u"m",
@@ -84,8 +84,8 @@ models[:modelname] = Plant(
                 n_uptake = 0.2u"μmol*mol^-1*s^-1",
             ),
             shape_pars = Plantmorph(
-                M_Vref = 0.0002u"mol",
-                M_Vscaling = 134.68301315501643u"mol",
+                M_Vref = 0.001410960462143729u"mol",
+                M_Vscaling = 53.121755658933736u"mol",
             ),
             allometry_pars = Allometry(
                 β1 = 1.0u"m",
@@ -101,8 +101,8 @@ models[:modelname] = Plant(
     shared = SharedParams(
         su_pars = ParallelComplementarySU(),
         core_pars = DEBCore(
-            y_V_E = 0.8,
-            y_E_EC = 0.8000002,
+            y_V_E = 0.7,
+            y_E_EC = 0.6900003100000001,
             y_E_EN = 30.0,
             n_N_V = 0.03,
             n_N_E = 0.025,
@@ -117,7 +117,7 @@ models[:modelname] = Plant(
             t0 = 297.96u"K",
         ),
         catabolism_pars = CatabolismCNshared(
-            k = 0.6u"d^-1",
+            k = 0.7u"d^-1",
         ),
         maintenance_pars = Maintenance(
             j_E_mai = 0.010476157527896646u"d^-1",

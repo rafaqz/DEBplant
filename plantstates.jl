@@ -25,5 +25,5 @@ plant.VR = 5.0g   / (25.0g/mol)
 plant.CR = 5.0g   / (25.0g/mol)
 plant.NR = 0.5g   / (25.0g/mol)
 
-states = OrderedDict(:plant => plant, :largeseed => largeseed, :smallseed => smallseed);
+states = OrderedDict("Plant" => plant, "Small Seed" => smallseed, "Large Seed" => largeseed);
 nothing

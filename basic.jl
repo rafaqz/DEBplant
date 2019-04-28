@@ -27,7 +27,6 @@ organism.environment = environments[:t1];
 organism = DynamicEnergyBudgets.PlantCN(time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.PlantCN(environment=env, time=t, environment_start=1u"hr");
 organism = DynamicEnergyBudgets.FvCBPlant(time=t);
-organism = DynamicEnergyBudgets.FvCBPlant3(time=t);
 organism = DynamicEnergyBudgets.FvCBPlant(environment=env, time=t);
 organism(du, u, nothing, 10u"hr")
 organism(du, u, nothing, 1)
