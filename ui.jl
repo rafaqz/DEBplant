@@ -1,10 +1,13 @@
-# Use a set script path otherwise the current working directory
+# Use a set script pat otherwise the current working directory
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 # Load the app scripts
 include(joinpath(dir, "app.jl"))
  # Import environments 
 environments, tspan = loadenvironments(dir)
 environments[:controls] = MicroclimControl()
+
+FieldMetadata.flattenable(::AbstractMicroclimate, x) = false
+FieldMetadata.flattenable(::AbstractMicroclimControl, x) = true
 
 # Import models
 models = OrderedDict()

@@ -65,8 +65,8 @@ models[:init] = Plant(
             n_N_E = 0.025,
             w_V = 25.0u"g*mol^-1",
         ),
-        feedback_pars = StructuralLossAutophagy(
-            K_autophagy = 6.135907273413173e-5,
+        resorption_pars = StructuralLossResorption(
+            K_resorption = 6.135907273413173e-5,
         ),
         tempcorr_pars = ParentTardieu(
             ΔH_A = 63.5u"kJ*mol^-1",

@@ -2,8 +2,9 @@ dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "util/hide.jl"))
 include(joinpath(dir, "load.jl"))
 
-du = [0.0 for i in 1:12]u"mol/hr"
+du = [0.0 for i in 1:6]u"mol/hr"
 u = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]u"mol"
+u = [1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 10.0]u"mol"
 t = 0u"hr":1u"hr":8760u"hr"
 # du = [0.0 for i in 1:12]
 # u = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 10.0]
@@ -20,7 +21,7 @@ include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 
 organism = models[:init];
 organism = models[:maturity];
-organism = models[:fvcb];
+organism = models[:bbiso];
 organism = app.savedmodel
 v = organism.records[1].vars
 organism.environment = environments[:t1];

@@ -8,7 +8,7 @@ round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), ucon
 
 using DynamicEnergyBudgets: dead
 
-runsims(i, mask, model, smallseed, largeseed, plant, envgrid, tspan, year) =
+runsims(i, mask, model, largeseed, plant, envgrid, tspan, year) =
     if ismissing(mask) 
         missing
     else
@@ -18,7 +18,7 @@ runsims(i, mask, model, smallseed, largeseed, plant, envgrid, tspan, year) =
         model = @set model.environment = env
         # Round to the start of a day
         tstop = tspan - oneunit(tspan)
-        smallseed_sol = typeof(smallseed)[]
+        # smallseed_sol = typeof(smallseed)[]
         largeseed_sol = typeof(largeseed)[]
         plant_sol = typeof(plant)[]
         envstart = oneunit(MONTH_HOURS)
@@ -32,16 +32,16 @@ runsims(i, mask, model, smallseed, largeseed, plant, envgrid, tspan, year) =
             sol = discrete_solve(model, plant, tstop)
             push!(plant_sol, dead(model) ? zero(sol) : sol)
             model.dead[] = false
-            model = set_allometry(model, smallseed)
-            sol = discrete_solve(model, smallseed, tstop)
-            push!(smallseed_sol, dead(model) ? zero(sol) : sol)
+            # model = set_allometry(model, smallseed)
+            # sol = discrete_solve(model, smallseed, tstop)
+            # push!(smallseed_sol, dead(model) ? zero(sol) : sol)
             model.dead[] = false
             model = set_allometry(model, largeseed)
             sol = discrete_solve(model, largeseed, tstop)
             push!(largeseed_sol, dead(model) ? zero(sol) : sol)
             envstart += MONTH_HOURS
         end
-        plant_sol, smallseed_sol, largeseed_sol
+        plant_sol, largeseed_sol
     end
 
 run_year(year, basepath, shade, model) = begin
@@ -52,7 +52,7 @@ run_year(year, basepath, shade, model) = begin
     tspan = 8759hr
     u = zeros(12)mol
     ulabelled = LArray{LABELS}(u)
-    runsims.(CartesianIndices(masklayer), masklayer, Ref.((model, smallseed, largeseed, plant, envgrid, tspan, year))...)
+    runsims.(CartesianIndices(masklayer), masklayer, Ref.((model, largeseed, plant, envgrid, tspan, year))...)
 end
 
 # envgrid = load_grid(basepath, years, shade, SKIPPED)
@@ -70,12 +70,13 @@ years = 2001:2001
 shade = 0
 i = CartesianIndex(65,35)
 
+environments, _ = loadenvironments(dir)
 
 # Import models
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-model = deepcopy(models[:ballberry]);
+model = deepcopy(models[:bbiso]);
 model.environment_start[] = oneunit(model.environment_start[])
 @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
 shapepath = joinpath(basepath, "ausborder/ausborder_polyline.shp")
@@ -93,7 +94,8 @@ sum_VS(a) = mean((ustrip(la.VS) for la in a))
 # yearly_outputs = (yearly_outputs,)
 # yearly_outputs = yearly_outputs[1]
 ind = CartesianIndices(yearly_outputs[1])
-sims = extract.(Ref(yearly_outputs), Ref(ind), (1,2,3))
+sims = extract.(Ref(yearly_outputs), Ref(ind), (1,))
+
 
 # Plot
 gr()
@@ -112,8 +114,7 @@ build_plot(data, name) = begin
          )
 end
 
-maps = plot(build_plot.(sims, keys(states))..., layout=(1,3), size=(1200,300), dpi=100)
+plts = build_plot.(sims, keys(states))
+maps = plot(plts..., layout=(1,length(plts)), size=(1200,300), dpi=100)
 
-savefig("plots/spreadmaps.png")
-
-
+# savefig("plots/spreadmaps.png")

@@ -9,8 +9,9 @@ using DynamicEnergyBudgets: STATE, STATE1, TRANS, TRANS1, shape_correction, defi
       assimilation_pars, parconv, w_V, build_vars, allometry_pars
 using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, g, mg, cm, m, s, hr, d, mol, mmol, μmol, σ
 
-const STATEKEYS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
-const STATELABELS = tuple(vcat([string("Shoot ", s) for s in STATE], [string("Root ", s) for s in STATE])...)
+# const STATEKEYS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
+const STATEKEYS = tuple([Symbol(string(s, :S)) for s in STATE]..., [Symbol(string(s, :R)) for s in STATE]...)
+const STATELABELS = tuple([string("Shoot ", s) for s in STATE]..., [string("Root ", s) for s in STATE]...)
 
 loadenvironments(dir) = begin
     locationspath = joinpath(dir, "microclimate/locations.jld")
@@ -24,10 +25,10 @@ end
 # The zero crossing of allometry is the seed size.
 set_allometry(model, state) = begin
     if :β0 in fieldnames(typeof(model.params[1].allometry_pars))
-        model = @set model.params[1].allometry_pars.β0 = state[2] * w_V(model.shared) * 0.999999
+        model = @set model.params[1].allometry_pars.β0 = state[:VS] * w_V(model.shared) * 0.999999
     end
     if :β0 in fieldnames(typeof(model.params[2].allometry_pars))
-        model = @set model.params[2].allometry_pars.β0 = state[8] * w_V(model.shared) * 0.999999
+        model = @set model.params[2].allometry_pars.β0 = state[:VR] * w_V(model.shared) * 0.999999
     end
     model
 end
