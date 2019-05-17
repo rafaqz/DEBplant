@@ -4,15 +4,17 @@ include(joinpath(dir, "plantstates.jl"))
 
 using PlotThemes
 
-const MONTH_HOURS = 365.25 / 12 * 24hr
+MONTH_HOURS = 365.25 / 12 * 24hr
 YLIMS = (-15,30)
 LIFESPAN = 4380
-LINEWIDTH = 1.7
+LINEWIDTH = 1.6
+ENVLABS = ("Soil water\npotential", "Soil\ntemperature", "Relative\nhumidity")
+DPI = 150
 
 import Base: round
 round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val)) 
 function plot_microclim(model, envname, rnge = 1:1:size(radiation(model.environment), 1); 
-                        ylabs=("Soil water\npotential", "Soil\ntemp.", "Relative humidity"), kwargs...)
+                        ylabs=ENVLABS, kwargs...)
     swp = -1 .* ustrip(soilwaterpotential(model.environment)) # .|> MPa
     st = soiltemperature(model.environment) .|> °C
     rh = relhumidity(model.environment)
@@ -97,7 +99,7 @@ function plot_years(model, environments, states, envstart)
         end
     end
     println("Plotting output...")
-    plt = plot(locplots..., size=(1200,1200), dpi=100, layout=grid(1, length(locplots)))
+    plt = plot(locplots..., size=(1200,1200), dpi=DPI, layout=grid(1, length(locplots)))
     savefig("plots/all")
     plt
 end
@@ -122,8 +124,8 @@ function plot_single(model, environments, states, envstart)
     rateplot = plot(hcat(model.records[1].vars.rate, model.records[2].vars.rate); 
                     yaxis=("Growth rate"), labels=["Shoot" "Root"])
     assimplot = plot(model.records[1].J[4,1,:]; yaxis=("Assimilation"))
-    plt = plot(solplot, rateplot, assimplot, microplots...; xaxis=((0,LIFESPAN), 0:500:4000), link=:x,
-         layout=grid(6, 1, heights=[0.3, 0.2, 0.15, 0.15, 0.1, 0.1]), size=(600,400), dpi=200)
+    plt = plot(solplot, rateplot, assimplot, microplots...; xaxis=((0,LIFESPAN), 0:500:4000), 
+               link=:x, layout=grid(6, 1, heights=[0.3, 0.2, 0.15, 0.15, 0.1, 0.1]), size=(600,400), dpi=DPI)
     savefig("plots/single")
     plt
 end
@@ -151,7 +153,7 @@ function plot_crossover(model, environment, u, envstart, tstop)
                     ylabel="Growth rate\n(mol mol^-1 d^-1)", xlabel="Time (hr)", 
                     labels=["Shoot" "Root"], linewidth=LINEWIDTH)
     plt = plot(solplot, rateplot; xlims=(1,tstop), link=:x,
-         layout=grid(2, 1, heights=[0.6, 0.4]), size=(600,400), dpi=200)
+         layout=grid(2, 1, heights=[0.6, 0.4]), size=(600,300), dpi=DPI)
     savefig("plots/crossover")
     plt
 end
@@ -175,7 +177,7 @@ function plot_assim(model, environment, u, envstart, tstop)
     swpplot = plot(hcat(model.records[1].vars.swp); yaxis=("Maximum\nsoil water\npotential"), 
                    xlabel="Time (hr)", linewidth=LINEWIDTH, legend=false)
     plt = plot(solplot, assimplot, swpplot; xlims=(1,tstop), link=:x,
-         layout=grid(3, 1, heights=[0.5, 0.25, 0.25]), size=(800,800), dpi=100)
+         layout=grid(3, 1, heights=[0.5, 0.25, 0.25]), size=(600,400), dpi=DPI)
     savefig("plots/assim")
     plt
 end
@@ -201,10 +203,46 @@ function plot_scaling(model, environment, u, envstart, tstop, x)
         plot!(plt, solt, color=[1 2 3], alpha=alpha)
         annotate!(plt, tstop, solt[end, 1], text(string(round(ustrip(s), digits=2)), 7))
     end
-    plot(plt; xlims=(1,tstop), size=(600,400), dpi=200, legend=:none)
+    plot(plt; xlims=(1,tstop), size=(600,400), dpi=DPI, legend=:none)
     savefig("plots/scaling")
     plt
 end
+
+function plot_tempcorr(model, environment, u, envstart, tstop)
+    rnge = ustrip(envstart):1:ustrip(envstart)+tstop
+    plotstart = 1hr
+    model.environment = environment
+    model.environment_start[] = envstart
+    model.dead[] = false
+    tspan = ustrip.((1, tstop))
+    prob = DiscreteProblem(model, ustrip(u), tspan)
+    sol = solve(prob, FunctionMap(scale_by_time = true))
+    n = length(u) ÷ 2 
+
+    swp = -1 .* ustrip(soilwaterpotential(model.environment)) # .|> MPa
+    st = soiltemperature(model.environment) .|> °C
+    rh = relhumidity(model.environment)
+    rad = radiation(model.environment)
+    soilcolors = permutedims(reverse(get.(Ref(ColorSchemes.copper), 0.0:1/7:1)))
+
+    radplot = plot(rad[rnge]; ylab="Radiation", color=:black, legend=:none)
+    soilwaterplot = plot(swp[rnge, :]; yflip=true, yscale=:log10, ylab=ENVLABS[1], 
+                         color=soilcolors, legend=:none)
+    rhplot = plot(rh[rnge, :]; ylab=ENVLABS[3], linealpha=0.8, color=[:blue :green], legend=:bottomright)
+    soiltempplot = plot(st[rnge, :]; ylab=ENVLABS[2], ylims=(-10, 80), color=soilcolors, legend=:none)
+    tempcorrplot = plot(ustrip.(hcat(model.records[1].vars.tempcorrection, model.records[2].vars.tempcorrection));
+                    ylabel="Temperatuire\ncorrection", xlabel="", 
+                    labels=["Shoot" "Root"], linewidth=LINEWIDTH, legend=:bottomright)
+    rateplot = plot(ustrip.(hcat(model.records[1].vars.rate, model.records[2].vars.rate));
+                    ylabel="Growth\nrate\n(d^-1)", xlabel="Time (hr)", 
+                    labels=["Shoot" "Root"], linewidth=LINEWIDTH)
+
+    plts = (radplot, soilwaterplot, soiltempplot, rhplot, tempcorrplot, rateplot)
+    plt = plot(plts...; xlims=(1,tstop), link=:x, layout=grid(length(plts), 1), size=(600,600), dpi=DPI)
+    savefig("plots/tempcorr")
+    plt
+end
+
 
 theme(:sand)
 theme(:solarized)
@@ -233,12 +271,14 @@ crossover = plot_crossover(model, environment, u, envstart, tstop);
 tstop = 4000
 assim = plot_assim(model, environment, u, envstart, tstop);
 
-crossover
-assim
+tstop = 1500
+envstart = 1000hr
+tempcorr = plot_tempcorr(deepcopy(model), environment, u, envstart, tstop);
+
 tstop = 8760
 envstart = 1hr
 scaling = plot_scaling(deepcopy(models[:bb]), environment, u, envstart, tstop, 1.5);
-scaling
+tempcorr
 
 
 # plt = plot_single(model, environments, states, 1000.0hr);
