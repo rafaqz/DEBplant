@@ -1,7 +1,7 @@
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
-using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NetCDF
+using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NetCDF, JLD2
 
 import Base: round
 round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val))
@@ -29,19 +29,11 @@ runsims(i, mask, model, largeseed, plant, envgrid, tspan, year) =
             # Run model in this environment
             model.dead[] = false
             model = set_allometry(model, largeseed)
-            sol = discrete_solve(model, plant, tstop)
-            push!(plant_sol, dead(model) ? zero(sol) : sol)
-            model.dead[] = false
-            # model = set_allometry(model, smallseed)
-            # sol = discrete_solve(model, smallseed, tstop)
-            # push!(smallseed_sol, dead(model) ? zero(sol) : sol)
-            model.dead[] = false
-            model = set_allometry(model, largeseed)
             sol = discrete_solve(model, largeseed, tstop)
             push!(largeseed_sol, dead(model) ? zero(sol) : sol)
             envstart += MONTH_HOURS
         end
-        plant_sol, largeseed_sol
+        largeseed_sol
     end
 
 run_year(year, basepath, shade, model) = begin
@@ -64,49 +56,81 @@ end
 
 const SKIPPED = (:snowdepth, :soilwatercontent) 
 const LABELS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
-const MONTH_HOURS = 365.25 / 12 * 24hr
+MONTH_HOURS = 365.25 / 12 * 24hr
 basepath = "/home/raf/Data/microclim"
-years = 2001:2001
+years = 2001:2010
 shade = 0
 i = CartesianIndex(65,35)
-
+envgrid = load_grid(basepath, 2009:2009, shade, SKIPPED)
 environments, _ = loadenvironments(dir)
-
 # Import models
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 model = deepcopy(models[:bbiso]);
 model.environment_start[] = oneunit(model.environment_start[])
-@time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
+# @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
 shapepath = joinpath(basepath, "ausborder/ausborder_polyline.shp")
-
+shp = open(shapepath) do io
+    read(io, Shapefile.Handle)
+end
 # Get lat and long coordinates for plotting
 radpath = joinpath(basepath, "SOLR/SOLR_2001.nc")
 long = ncread(radpath, "longitude")
 lat = ncread(radpath, "latitude")
+# JLD2.@save "yearly_outputs.jld" yearly_outputs 
+JLD2.@load "yearly_outputs.jld"
 
 
-extract(yo, ind, n) = [ismissing(yo[1][i]) ? 0.0 : sum_yo(yo, i, n) for i in ind]
-sum_yo(yo, i, n) = minimum((sum_VS(yo[x][i][n]) for x in eachindex(yo)))
-sum_VS(a) = mean((ustrip(la.VS) for la in a))
-
-# yearly_outputs = (yearly_outputs,)
-# yearly_outputs = yearly_outputs[1]
-ind = CartesianIndices(yearly_outputs[1])
-sims = extract.(Ref(yearly_outputs), Ref(ind), (1,))
-
-
-# Plot
-gr()
-# plotly()
-
-shp = open(shapepath) do io
-    read(io, Shapefile.Handle)
+combine_year(year) = begin 
+    out = Array{Union{Missing,Float64},2}(undef, size(year)...)
+    for i in CartesianIndices(year)
+        out[i] = if ismissing(year[i]) 
+            0.0 
+        else
+            trans(sum_VS(year[i][2]))
+        end
+    end
+    out
 end
 
+combine_month(years) = begin 
+    out = [zeros(Float64, size(years[1])...) for x in 1:12]
+    for year in years
+        for i in CartesianIndices(year)
+            for month in 1:12
+                val = if ismissing(year[i]) || ismissing(year[i][2][month]) 
+                    0.0 
+                else
+                    val = trans(ustrip(year[i][2][month][:VS]))
+                end
+                out[month][i] = max(out[month][i], val)
+            end
+        end
+    end
+    out
+end
+
+extract_months(year) = begin
+    out = [zeros(Float64, size(year)...) for x in 1:12]
+    for i in CartesianIndices(year)
+        for month in 1:12
+            val = if ismissing(year[i]) || ismissing(year[i][2][month]) 
+                0.0 
+            else
+                val = trans(ustrip(year[i][2][month][:VS]))
+            end
+            out[month][i] = max(out[month][i], val)
+        end
+    end
+    out
+end
+
+trans(x) = log10(1 + x)
+sum_VS(a) = maximum((ustrip(la.VS) for la in a))
+
 build_plot(data, name) = begin
-    hm = heatmap(long, lat, rotl90(data); c=:tempo, legend=false, title=name)
+    hm = heatmap(long, lat, rotl90(data); c=:tempo, legend=false, title=name, clims=(0.0, 9.0))
     plot!(hm, shp.shapes; 
           xlim=(long[1], long[end]), ylim=(lat[end], lat[1]), 
           # xlab="Longitude", ylab="Latitude",
@@ -114,7 +138,22 @@ build_plot(data, name) = begin
          )
 end
 
-plts = build_plot.(sims, keys(states))
-maps = plot(plts..., layout=(1,length(plts)), size=(1200,300), dpi=100)
 
-# savefig("plots/spreadmaps.png")
+# Plot
+gr()
+# plotly()
+
+year_sums = combine_year.(yearly_outputs)
+plts = build_plot.(year_sums, string.(years))
+
+# month_sums = combine_month(yearly_outputs)
+# plts = build_plot.(month_sums, string.(1:12))
+
+# months = extract_months(yearly_outputs[2])
+# plts = build_plot.(months, string.(1:12))
+# data = months[1]
+# name = "test"
+# maximum(year_sums[1])
+
+maps = plot(plts..., layout=(length(plts)÷2, 2), size=(1200,1600), dpi=100)
+savefig("plots/map.png")
