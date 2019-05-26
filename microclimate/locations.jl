@@ -3,7 +3,7 @@ using Unitful: W, m, °C, hr, mol, K, s, J, Mg, kg, kPa, Pa
 
 basepath = ENV["MICROCLIM"]
 shade = 0
-years = 2001:2011
+years = 2005:2011
 
 skipped = (:soilwatercontent,) 
 envgrid = load_grid(basepath, years, shade, skipped);

@@ -50,7 +50,7 @@ models[:bbiso] = Plant(
                             tref = 298.15u"K",
                         ),
                         stomatal_conductance = BallBerryStomatalConductance(
-                            g0 = 0.0u"mol*m^-2*s^-1",
+                            g0 = 0.5u"μmol*m^-2*s^-1",
                             gs_submodel = BallBerryGSsubModel(
                                 gamma = 0.0u"μmol*mol^-1",
                                 g1 = 7.0,
@@ -65,8 +65,8 @@ models[:bbiso] = Plant(
             ),
             shape_pars = Isomorph(),
             allometry_pars = Allometry(
-                β1 = 0.093260334688322u"m",
-                α = 0.19179102616724886,
+                β1 = 0.09u"m",
+                α = 0.2,
             ),
             maturity_pars = nothing,
             trans_pars = nothing,
@@ -82,7 +82,7 @@ models[:bbiso] = Plant(
             shape_pars = Isomorph(),
             allometry_pars = Allometry(
                 β1 = 1.0u"m",
-                α = 0.19179102616724886,
+                α = 0.2,
             ),
             maturity_pars = nothing,
             trans_pars = nothing,
@@ -95,14 +95,14 @@ models[:bbiso] = Plant(
         su_pars = ParallelComplementarySU(),
         core_pars = DEBCore(
             y_V_E = 1.0,
-            y_E_EC = 0.9000001000000001,
+            y_E_EC = 0.9,
             y_E_EN = 30.0,
             n_N_V = 0.03,
             n_N_E = 0.025,
             w_V = 25.0u"g*mol^-1",
         ),
         resorption_pars = StructuralLossResorption(
-            K_resorption = 1.047615752789665e-6,
+            K_resorption = 1.0e-6,
         ),
         tempcorr_pars = ParentTardieu(
             ΔH_A = 63.5u"kJ*mol^-1",
@@ -113,7 +113,7 @@ models[:bbiso] = Plant(
             k = 0.6u"d^-1",
         ),
         maintenance_pars = Maintenance(
-            j_E_mai = 0.009545484566618337u"d^-1",
+            j_E_mai = 0.01u"d^-1",
         ),
     ),
 )

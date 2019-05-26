@@ -13,6 +13,10 @@ using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, g, mg, cm, m, s, hr, d,
 const STATEKEYS = tuple([Symbol(string(s, :S)) for s in STATE]..., [Symbol(string(s, :R)) for s in STATE]...)
 const STATELABELS = tuple([string("Shoot ", s) for s in STATE]..., [string("Root ", s) for s in STATE]...)
 
+import Base: round
+round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val))
+
+
 loadenvironments(dir) = begin
     locationspath = joinpath(dir, "microclimate/locations.jld")
     @load locationspath t1 t2 t3

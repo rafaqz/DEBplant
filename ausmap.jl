@@ -3,9 +3,6 @@ include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
 using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NetCDF, JLD2
 
-import Base: round
-round(::Type{T}, x::Quantity) where {T<:Quantity} = T(round(typeof(one(T)), uconvert(unit(T), x).val))
-
 using DynamicEnergyBudgets: dead
 
 runsims(i, mask, model, largeseed, plant, envgrid, tspan, year) =
@@ -58,7 +55,7 @@ const SKIPPED = (:snowdepth, :soilwatercontent)
 const LABELS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
 MONTH_HOURS = 365.25 / 12 * 24hr
 basepath = "/home/raf/Data/microclim"
-years = 2001:2010
+years = 2005:2010
 shade = 0
 i = CartesianIndex(65,35)
 envgrid = load_grid(basepath, 2009:2009, shade, SKIPPED)
@@ -69,7 +66,7 @@ modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 model = deepcopy(models[:bbiso]);
 model.environment_start[] = oneunit(model.environment_start[])
-# @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
+@time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
 shapepath = joinpath(basepath, "ausborder/ausborder_polyline.shp")
 shp = open(shapepath) do io
     read(io, Shapefile.Handle)
@@ -79,7 +76,7 @@ radpath = joinpath(basepath, "SOLR/SOLR_2001.nc")
 long = ncread(radpath, "longitude")
 lat = ncread(radpath, "latitude")
 # JLD2.@save "yearly_outputs.jld" yearly_outputs 
-JLD2.@load "yearly_outputs.jld"
+# JLD2.@load "yearly_outputs.jld"
 
 
 combine_year(year) = begin 
@@ -156,4 +153,4 @@ plts = build_plot.(year_sums, string.(years))
 # maximum(year_sums[1])
 
 maps = plot(plts..., layout=(length(plts)÷2, 2), size=(1200,1600), dpi=100)
-savefig("plots/map.png")
+# savefig("plots/map.png")
