@@ -68,7 +68,7 @@ models[:bb] = Plant(
                 M_Vscaling = 7.4u"mol",
             ),
             allometry_pars = Allometry(
-                β1 = 0.09u"m",
+                β1 = 0.2u"m",
                 α = 0.2,
             ),
             maturity_pars = nothing,

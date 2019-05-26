@@ -65,7 +65,7 @@ models[:bbiso] = Plant(
             ),
             shape_pars = Isomorph(),
             allometry_pars = Allometry(
-                β1 = 0.09u"m",
+                β1 = 0.2u"m",
                 α = 0.2,
             ),
             maturity_pars = nothing,
