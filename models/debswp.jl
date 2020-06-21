@@ -1,9 +1,9 @@
 models[:debswp] = Plant(
     environment = first(values(environments)),
+    vars = vars,
     time = 0hr:1hr:8760hr*2,
     params = (
         Params(
-            rate_formula = FZeroRate(),
             assimilation_pars = KooijmanWaterPotentialPhotosynthesis(
                 potential_modifier = ZhouPotentialDependence(
                     s = 2.0u"MPa^-1",
@@ -21,7 +21,7 @@ models[:debswp] = Plant(
                 j_O_Amax = 0.1u"μmol*m^-2*s^-1",
                 SLA = 24.0u"m^2*kg^-1",
             ),
-            shape_pars = Isomorph(),
+            scaling_pars = Isomorph(),
             allometry_pars = Allometry(
                 β1 = 0.093260334688322u"m",
                 α = 0.19179102616724886,
@@ -33,11 +33,10 @@ models[:debswp] = Plant(
             production_pars = nothing,
         ),
         Params(
-            rate_formula = FZeroRate(),
             assimilation_pars = ConstantNAssim(
                 n_uptake = 0.15u"μmol*mol^-1*s^-1",
             ),
-            shape_pars = Isomorph(),
+            scaling_pars = Isomorph(),
             allometry_pars = Allometry(
                 β1 = 1.0u"m",
                 α = 0.19179102616724886,
@@ -52,6 +51,7 @@ models[:debswp] = Plant(
     shared = SharedParams(
         su_pars = ParallelComplementarySU(),
         core_pars = DEBCore(
+            j_E_mai = 0.01519911082952934u"d^-1",
             y_V_E = 0.5,
             y_E_EC = 0.51000049,
             y_E_EN = 30.0,
@@ -69,9 +69,6 @@ models[:debswp] = Plant(
         ),
         catabolism_pars = CatabolismCNshared(
             k = 0.75u"d^-1",
-        ),
-        maintenance_pars = Maintenance(
-            j_E_mai = 0.01519911082952934u"d^-1",
         ),
     ),
 )

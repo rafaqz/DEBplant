@@ -1,9 +1,9 @@
 models[:potato] = Plant(
     environment = first(values(environments)),
+    vars = vars,
     time = 0hr:1hr:8760hr*2,
     params = (
         Params(
-            rate_formula = FZeroRate(),
             assimilation_pars = KooijmanWaterPotentialPhotosynthesis(
                 potential_modifier = ZhouPotentialDependence(
                     s = 2.0u"MPa^-1",
@@ -21,7 +21,7 @@ models[:potato] = Plant(
                 j_O_Amax = 0.1u"μmol*m^-2*s^-1",
                 SLA = 24.0u"m^2*kg^-1",
             ),
-            shape_pars = Plantmorph(
+            scaling_pars = Plantmorph(
                 M_Vref = 0.2834948325853611u"mol",
                 M_Vscaling = 33.36201074400118u"mol",
             ),
@@ -36,11 +36,10 @@ models[:potato] = Plant(
             production_pars = nothing,
         ),
         Params(
-            rate_formula = FZeroRate(),
             assimilation_pars = ConstantNAssim(
                 n_uptake = 0.2u"μmol*mol^-1*s^-1",
             ),
-            shape_pars = Plantmorph(
+            scaling_pars = Plantmorph(
                 M_Vref = 0.32595016692412887u"mol",
                 M_Vscaling = 9.283177667225555u"mol",
             ),
@@ -58,6 +57,7 @@ models[:potato] = Plant(
     shared = SharedParams(
         su_pars = ParallelComplementarySU(),
         core_pars = DEBCore(
+            j_E_mai = 0.0049770235643321085u"d^-1",
             y_V_E = 0.8,
             y_E_EC = 0.65000035,
             y_E_EN = 30.0,
@@ -75,9 +75,6 @@ models[:potato] = Plant(
         ),
         catabolism_pars = CatabolismCNshared(
             k = 0.35u"d^-1",
-        ),
-        maintenance_pars = Maintenance(
-            j_E_mai = 0.0049770235643321085u"d^-1",
         ),
     ),
 )

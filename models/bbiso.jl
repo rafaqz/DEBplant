@@ -1,9 +1,9 @@
 models[:bbiso] = Plant(
     environment = first(values(environments)),
+    vars = vars,
     time = 0hr:1hr:8760hr*2,
     params = (
         Params(
-            rate_formula = FZeroRate(),
             assimilation_pars = BBPotentialCAssim(
                 photoparams = FvCBEnergyBalance(
                     radiation_conductance = YingPingRadiationConductance(
@@ -51,7 +51,7 @@ models[:bbiso] = Plant(
                         ),
                         stomatal_conductance = BallBerryStomatalConductance(
                             g0 = 0.5u"μmol*m^-2*s^-1",
-                            gs_submodel = BallBerryGSsubModel(
+                            gs_submodel = BallBerryStomatalConductanceSubModel(
                                 gamma = 0.0u"μmol*mol^-1",
                                 g1 = 7.0,
                             ),
@@ -63,7 +63,7 @@ models[:bbiso] = Plant(
                 ),
                 SLA = 24.0u"m^2*kg^-1",
             ),
-            shape_pars = Isomorph(),
+            scaling_pars = Isomorph(),
             allometry_pars = Allometry(
                 β1 = 0.2u"m",
                 α = 0.2,
@@ -75,11 +75,10 @@ models[:bbiso] = Plant(
             production_pars = nothing,
         ),
         Params(
-            rate_formula = FZeroRate(),
             assimilation_pars = ConstantNAssim(
                 n_uptake = 0.15u"μmol*mol^-1*s^-1",
             ),
-            shape_pars = Isomorph(),
+            scaling_pars = Isomorph(),
             allometry_pars = Allometry(
                 β1 = 1.0u"m",
                 α = 0.2,
@@ -94,6 +93,7 @@ models[:bbiso] = Plant(
     shared = SharedParams(
         su_pars = ParallelComplementarySU(),
         core_pars = DEBCore(
+            j_E_mai = 0.01u"d^-1",
             y_V_E = 1.0,
             y_E_EC = 0.9,
             y_E_EN = 30.0,
@@ -111,9 +111,6 @@ models[:bbiso] = Plant(
         ),
         catabolism_pars = CatabolismCNshared(
             k = 0.6u"d^-1",
-        ),
-        maintenance_pars = Maintenance(
-            j_E_mai = 0.01u"d^-1",
         ),
     ),
 )

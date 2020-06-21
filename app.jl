@@ -1,5 +1,5 @@
-using Revise, Setfield, InteractBulma, InteractBase, Blink, WebIO, Observables, CSSUtil, Mux
-using Plots, UnitfulPlots, StatsPlots, PlotNested, Codify, Select, ColorSchemes
+using Setfield, Interact, Blink
+using Plots, UnitfulRecipes, StatsPlots, PlotNested, Codify, Select, ColorSchemes, DimensionalData
 
 include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
@@ -14,9 +14,24 @@ mutable struct ModelApp{M,E,PS,T}
 end
 
 init_state(modelobs::Observable) = init_state(modelobs[])
-init_state(model) = init_state(has_reserves.(define_organs(model, 1hr)))
-init_state(::NTuple{2,HasCN}) = [plant...]
-init_state(::NTuple{2,HasCNE}) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 0.01]mol
+init_state(model::AbstractOrganism) = init_state(has_reserves.(define_organs(model, 1hr)), model)
+init_state(::NTuple{2,HasCN}, model) = begin
+    xdim = dims(first(model.records).J, X)
+    xval = DimensionalData.unwrap(val(xdim))
+    A = zeros(length(xdim) * length(model.records)) * mol
+    newxval = Val((map(x -> Symbol(x, :S), xval)..., map(x -> Symbol(x, :R), xval)...))
+    newxdim = X(newxval, mode(xdim), nothing)
+    u = DimensionalArray(A, (newxdim,))
+
+    u[:VS] = 0.2mg / (25.0g/mol)
+    u[:CS] = 5.0mg  / (25.0g/mol)
+    u[:NS] = 0.2mg  / (25.0g/mol)
+    u[:VR] = 0.04mg / (25.0g/mol)
+    u[:CR] = 1.0mg  / (25.0g/mol)
+    u[:NR] = 0.04mg  / (25.0g/mol)
+    u
+end
+init_state(::NTuple{2,HasCNE}, model) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 0.01]mol
 
 pot(p, x) = 1 #potential_dependence(p.potential_modifier, x)
 
@@ -37,37 +52,37 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
                   tstop::Number, envstart::Number, plotstart::Number, app)
 
     length(params) > 0 || return (plot(), plot())
-    m2 = ulreconstruct(model, params)
+    m2 = reconstruct(model, params, Real)
 
     m2.dead[] = false
     m2.environment_start[] = envstart
-    m2 = set_allometry(m2, largeseed)
+    m2 = set_allometry(m2, u)
     # zero out plottable var data
     vardata = plottables(m2.records)
     for (n, d) in vardata
         eltype(d) == Any && continue
         fill!(d, zero(eltype(d)))
     end
-    # println("vars: ", model.records[1].vars.rate)
 
     app.savedmodel = m2
 
-    # println("u, tstop: ", (ustrip(u), ustrip(tstop)))
+    # println("tstop: ", ustrip(tstop))
     # println("num params: ", length(params))
     prob = DiscreteProblem{true}(m2, ustrip(u), (one(tstop), ustrip(tstop)))
-    # local sol
-    # try
+    local sol
+    try
         sol = solve(prob, FunctionMap(scale_by_time = true))
-    # catch e
-        # println(e)
-        # return plot(), plot()
-    # end
+    catch e
+        println(e)
+        return plot(), plot()
+    end
     n = length(u) ÷ 2 
-    solplot1 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars = [1:n...], plotdensity=400, legend=:topleft,
-                    labels=reshape([STATELABELS[1:n]...], 1, n), ylabel="State (CMol)",
+    statelabels = DimensionalData.unwrap(val(dims(u, X)))
+    solplot1 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[1:n...], plotdensity=400, legend=:topleft,
+                    labels=reshape([statelabels[1:n]...], 1, n), ylabel="State (CMol)",
                     xlabel=string(m2.params[1].name, " : ",  typeof(m2.params[1].assimilation_pars).name, " - time (hr)"))
-    solplot2 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars = [n+1:2n...], plotdensity=400, legend=:topleft,
-                    labels=reshape([STATELABELS[n+1:2n]...], 1, n), ylabel="State (CMol)",
+    solplot2 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[n+1:2n...], plotdensity=400, legend=:topleft,
+                    labels=reshape([statelabels[n+1:2n]...], 1, n), ylabel="State (CMol)",
                     xlabel=string(m2.params[2].name, " : ", typeof(m2.params[2].assimilation_pars).name, " - time (hr)"))
     # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
     # s = sol' # .* m2.shared.core_pars.w_V
@@ -87,15 +102,15 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
 end
 
 
-function make_plot(u::AbstractVector, solplots, vars, env, flux,
-                   plottemp::Bool, plotshape::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number, plotstart, plotsize)
+function make_plot(u::AbstractVector, solplots, varsbools, envbools, flux,
+                   plottemp::Bool, plotscaling::Bool, plotphoto::Bool, plotpot::Bool, tstop::Number, plotstart, plotsize)
 
     model = app.savedmodel
     envstart = model.environment_start[]
     
     tspan = ustrip(plotstart):ustrip(tstop)
-    varplots = plot_selected(model.records, vars, tspan)
-    envplots = plot_selected(model.environment, env, ustrip(envstart+plotstart):ustrip(envstart+tstop))
+    varplots = plot_selected(model.records, varsbools, tspan)
+    envplots = plot_selected(model.environment, envbools, round(Int, ustrip(envstart+plotstart)):round(Int, ustrip(envstart+tstop)))
     fluxplots = []
     if length(flux) > 0
         plot_fluxes!(fluxplots, flux[1], model.records[1].J, tspan)
@@ -103,8 +118,14 @@ function make_plot(u::AbstractVector, solplots, vars, env, flux,
         plot_fluxes!(fluxplots, flux[3], model.records[2].J, tspan)
         plot_fluxes!(fluxplots, flux[4], model.records[2].J1, tspan)
     end
-    timeplots = plot(solplots..., varplots..., envplots..., fluxplots...,
-                     layout=Plots.GridLayout(length(solplots)+length(varplots)+length(envplots)+length(fluxplots), 1))
+
+    subplots = ( 
+        solplots..., 
+        varplots..., 
+        envplots..., 
+        fluxplots...
+    )
+    timeplots = plot(subplots...; layout=Plots.GridLayout(length(subplots), 1))
 
     organs = define_organs(model, 1hr)
     o = organs[1]
@@ -113,7 +134,7 @@ function make_plot(u::AbstractVector, solplots, vars, env, flux,
 
     plottemp && push!(subplots, plot(x -> tempcorr(tempcorr_pars(o), x), K(0.0°C):1.0K:K(50.0°C),
                                      legend=false, ylabel="Correction", xlabel="°C"))
-    plotshape && push!.(Ref(subplots), plot_shape.(model.params))
+    plotscaling && push!.(Ref(subplots), plot_scaling.(model.params))
     plotphoto && push!(subplots, plot(x -> photo(o, state[1], x), (0*W*m^-2:5*W*m^-2:1000*W*m^-2),
                                       ylabel="C uptake", xlabel="Irradiance"))
     plotpot && push!(subplots, plot(x -> pot(assimilation_pars(o), x), (0.0kPa:-10.0kPa:-5000kPa),
@@ -130,7 +151,7 @@ function make_plot(u::AbstractVector, solplots, vars, env, flux,
     end
 end
 
-plot_shape(p) = plot(x -> shape_correction(p.shape_pars, x), (0.0mol:0.01mol:10.0mol),
+plot_scaling(p) = plot(x -> scaling_correction(p.scaling_pars, x), (0.0mol:0.01mol:10.0mol),
                      ylims=(0.0, 1.0), legend=false, ylabel="Correction", xlabel="CMols Stucture")
 
 plot_fluxes!(plots, obs, J, tspan) = begin
@@ -185,13 +206,11 @@ gr()
 
 
 function (app::ModelApp)(req) # an "App" takes a request, returns the output
-
     throt = 0.1
     env = first(values(app.environments))
     envobs = Observable{Any}(env);
 
-
-    tstoptext = textbox(value=string(tspan.stop), label="Timespan")
+    tstoptext = textbox(value=string(app.tspan.stop), label="Timespan")
     envstart = slider(1hr:1hr:tspan.stop, value = 1hr, label="Environment start time")
     plotstart = slider(1hr:1hr:10000hr, value = 1hr, label="Plot start time")
     envdrop = dropdown(app.environments, value=env, label="Environment")
@@ -203,12 +222,12 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     savename = textbox(value="modelname", label="Save name")
 
     plottemp = checkbox("Plot TempCorr")
-    plotshape = checkbox("Plot Scaling Function")
+    plotscaling = checkbox("Plot Scaling Function")
     plotphoto = checkbox("Plot Photosynthesis")
     plotpot = checkbox("Plot Potential dependence")
 
     controlbox = vbox(subtitle("Controls"), hbox(save, savename, modeldrop, envdrop, tstoptext, envstart, plotstart, plotly, gr))
-    funcbox = vbox(subtitle("Plot Functions"), hbox(plottemp, plotshape, plotphoto, plotpot))
+    funcbox = vbox(subtitle("Plot Functions"), hbox(plottemp, plotscaling, plotphoto, plotpot))
 
     reload = button("Reload")
 
@@ -223,7 +242,6 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     end
     half = length(drops) ÷ 2
     dropbox = vbox(subtitle("Model Components"), hbox(drops[1:half]...), hbox(drops[half+1:end]...))
-    getindex.(drops)
 
     solplotobs = Observable{Any}([plot(), plot()])
     plotobs = Observable{Any}(plot())
@@ -238,7 +256,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     end
 
     load_model(m, e) = begin
-        m = update_vars(m, 8760*11)
+        #m = update_vars(m, 8760*11)
         m = @set m.environment = e
         # Update all the component dropdowns
         setindex!.(drops, getindex.(select(m), 2))
@@ -272,20 +290,20 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     statesliders = Observable{Vector{Widget{:slider}}}(Widget{:slider}[]);
     stateobs = Observable{typeof(state)}(state);
     statebox = Observable{typeof(dom"div"())}(dom"div"());
-    statedrop = dropdown(states, value=states["Large seed"], label="init state")
+    #statedrop = dropdown(states, value=states["Large seed"], label="init state")
 
     make_paramsliders(model) = begin
-        params = ulflatten(Vector, model)
-        fnames = fieldnameflatten(Vector, model)
-        parents = parentflatten(Vector, model)
+        params = flatten(model, Real)
+        fnames = fieldnameflatten(model, Number)
+        parents = parentnameflatten(model, Number)
         backcolors = hex.(colorforeach(parents))
-        limits = metaflatten(Vector, model, FieldMetadata.limits)
-        descriptions = metaflatten(Vector, model, FieldMetadata.description)
-        unts = metaflatten(Vector, model, FieldMetadata.units)
-        log = metaflatten(Vector, model, FieldMetadata.logscaled)
+        bounds = metaflatten(model, FieldMetadata.bounds, Number)
+        descriptions = metaflatten(model, FieldMetadata.description, Number)
+        unts = metaflatten(model, FieldMetadata.units, Number)
+        log = metaflatten(model, FieldMetadata.logscaled, Number)
         attributes = broadcast((p, b, n, d, u) -> Dict(:title => "$p.$n: $d $(u == nothing ? "" : u)"), parents, backcolors, fnames, descriptions, unts)
-        sl = broadcast(limits, fnames, params, attributes, log, unts) do l, n, p, a, lg, u
-            println((l, n, p, a, lg))
+        sl = broadcast(bounds, fnames, params, attributes, log, unts) do l, n, p, a, lg, u
+            # println((l, n, p, a, lg))
             # Use a log range if specified in metadata
             rnge = lg ? vcat(exp10.(range(log10(abs(l[1])), stop=sign(log10(abs(l[2]))) , length=100) * sign(l[2])) * l[2]) : collect(l[1]:(l[2]-l[1])/100:l[2])
             InteractBase.slider(rnge, label=string(n), value=p, attributes=a)
@@ -297,12 +315,12 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         [dom"div[style=background-color:#$(backcolors[i])]"(sl) for (i, sl) in enumerate(sl)]
     end
 
-    make_statesliders(m, state) = begin
-        sl = state_slider.(STATELABELS, state)
-        map!((x...) -> [x...], stateobs, throttle.(throt, observe.(sl))...)
-        stateobs[] = [s[] for s in sl]
-        sl
-    end
+    # make_statesliders(m, state) = begin
+    #     sl = state_slider.(STATELABELS, state)
+    #     map!((x...) -> [x...], stateobs, throttle.(throt, observe.(sl))...)
+    #     stateobs[] = [s[] for s in sl]
+    #     sl
+    # end
 
     make_varchecks(model) = begin
         checks = PlotNested.plotchecks(model.records)
@@ -318,10 +336,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
         checks
     end
 
-    flux_grids = (make_grid(STATE, TRANS), make_grid(STATE1, TRANS1,),
-                  make_grid(STATE, TRANS), make_grid(STATE1, TRANS1));
-    fluxbox = vbox(subtitle("Plot Internal Flux"), hbox(arrange_grid.(flux_grids)...))
-    fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
+    fluxbox, fluxobs = build_flux_grids(first(values(models)).records[1])
 
     tstopobs = map(throttle(throt, observe(tstoptext))) do t
         int = tryparse(Int, t)
@@ -333,7 +348,7 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(make_paramsliders, paramsliders, modelobs)
     map!(make_varchecks, varchecks, modelobs)
     map!(make_envchecks, envchecks, modelobs)
-    map!(make_statesliders, statesliders, modelobs, observe(statedrop))
+    # map!(make_statesliders, statesliders, modelobs, observe(statedrop))
 
     map!(c -> vbox(subtitle("Plot Variables"), hbox(vbox.(c)...)), varbox, varchecks)
     map!(envbox, envchecks) do c
@@ -344,13 +359,13 @@ function (app::ModelApp)(req) # an "App" takes a request, returns the output
     map!(s -> vbox(subtitle("Init State"), hbox(spreadwidgets(s, cols = 2), statedrop)), statebox, statesliders)
 
     map!(make_plot, plotobs, stateobs[], solplotobs, varobs, envobs,
-         fluxobs, observe(plottemp), observe(plotshape), observe(plotphoto), observe(plotpot), observe(tstopobs), plotstartobs, app.plotsize)
+         fluxobs, observe(plottemp), observe(plotscaling), observe(plotphoto), observe(plotpot), observe(tstopobs), plotstartobs, app.plotsize)
     map!(sol_plot, solplotobs, modelobs, paramobs, stateobs, tstopobs, envstartobs, plotstartobs, app)
 
     modelobs[] = load_model(modeldrop[], envdrop[])
 
+    #dom"div"()
     ui = vbox(hbox(reload, dropbox), controlbox, funcbox, fluxbox, varbox, envbox, plotobs, parambox, statebox);
-    # dom"div"()
 end
 
 subtitle(x) = dom"h4.subtitle.is-4"(x)
@@ -364,21 +379,35 @@ end
 state_slider(label, val) =
 slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=string(label), value=val)
 
-make_grid(rownames, colnames) = begin
+build_flux_grids(::Records) = vbox(), () 
+build_flux_grids(records::PlottableRecords) = begin
+    J = records.J
+    J1 = records.J1
+    J_axislabels = map(d -> DynamicEnergyBudgets.unwrap(val(d)), dims(J, (X, Y)))
+    J1_axislabels = map(d -> DynamicEnergyBudgets.unwrap(val(d)), dims(J1, (X, Y)))
+    flux_grids = (build_flux_grid(J_axislabels...), build_flux_grid(J1_axislabels...),
+                  build_flux_grid(J_axislabels...), build_flux_grid(J1_axislabels...));
+    fluxbox = vbox(subtitle("Plot Internal Flux"), hbox(arrange_grid.(flux_grids)...))
+    fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
+    fluxbox, fluxobs
+end
+build_flux_grid(rownames, colnames) = begin
     rows = length(rownames)
     cols = length(colnames)
     [checkbox(false, label = join([string(rownames[r]), string(colnames[c])], ",")) for r = 1:rows, c = 1:cols]
 end
+
+
 
 arrange_grid(a) = hbox((vbox(a[:,col]...) for col in 1:size(a, 2))...)
 
 observe_grid(a) = map((t...) -> [t[i + size(a,1) * (j - 1)] for i in 1:size(a,1), j in 1:size(a,2)], observe.(a)...)
 
 
-electronapp(app; zoom=0.6) = begin
+electronapp(app; zoom=0.5) = begin
     ui = app(nothing)
-    w = Window(Dict("webPreferences"=>Dict("zoomFactor"=>0.6)));
-    # Blink.AtomShell.@dot w webContents.setZoomFactor($zoom)
+    w = Window()
+    Blink.AtomShell.@dot w webContents.setZoomFactor($zoom)
     body!(w, ui);
 end
 

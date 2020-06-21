@@ -1,11 +1,10 @@
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "load.jl"))
 include(joinpath(dir, "plantstates.jl"))
-using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NetCDF, JLD2
-
+using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NCDatasets, JLD2
 using DynamicEnergyBudgets: dead
 
-runsims(i, mask, model, largeseed, plant, envgrid, tspan, year) =
+runsims(i, mask, model, largeseed, envgrid, tspan, year) =
     if ismissing(mask) 
         missing
     else
@@ -17,7 +16,6 @@ runsims(i, mask, model, largeseed, plant, envgrid, tspan, year) =
         tstop = tspan - oneunit(tspan)
         # smallseed_sol = typeof(smallseed)[]
         largeseed_sol = typeof(largeseed)[]
-        plant_sol = typeof(plant)[]
         envstart = oneunit(MONTH_HOURS)
         # Run for each month
         while (envstart + tspan) < length(radiation(env)) * hr
@@ -41,7 +39,7 @@ run_year(year, basepath, shade, model) = begin
     tspan = 8759hr
     u = zeros(12)mol
     ulabelled = LArray{LABELS}(u)
-    runsims.(CartesianIndices(masklayer), masklayer, Ref.((model, largeseed, plant, envgrid, tspan, year))...)
+    runsims.(CartesianIndices(masklayer), masklayer, Ref.((model, largeseed, envgrid, tspan, year))...)
 end
 
 # envgrid = load_grid(basepath, years, shade, SKIPPED)
@@ -50,9 +48,11 @@ end
     # println(i)
     # envs = MicroclimPoint(envgrid, i)
 # end
+#
 
+#using NetCDF
 const SKIPPED = (:snowdepth, :soilwatercontent) 
-const LABELS = (:PS, :VS, :MS, :CS, :NS, :ES, :PR, :VR, :MR, :CR, :NR, :ER)
+const LABELS = (:VS, :CS, :NS, :ES, :VR, :CR, :NR)
 MONTH_HOURS = 365.25 / 12 * 24hr
 basepath = "/home/raf/Data/microclim"
 years = 2005:2010
@@ -64,11 +64,11 @@ environments, _ = loadenvironments(dir)
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-model = deepcopy(models[:bbiso]);
+model = deepcopy(models[:bb]);
 model.environment_start[] = oneunit(model.environment_start[])
-@time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
-shapepath = joinpath(basepath, "ausborder/ausborder_polyline.shp")
-shp = open(shapepath) do io
+# @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
+scalingpath = joinpath(basepath, "ausborder/ausborder_polyline.shp")
+shp = open(scalingpath) do io
     read(io, Shapefile.Handle)
 end
 # Get lat and long coordinates for plotting
@@ -76,7 +76,7 @@ radpath = joinpath(basepath, "SOLR/SOLR_2001.nc")
 long = ncread(radpath, "longitude")
 lat = ncread(radpath, "latitude")
 # JLD2.@save "yearly_outputs.jld" yearly_outputs 
-# JLD2.@load "yearly_outputs.jld"
+JLD2.@load "yearly_outputs.jld"
 
 
 combine_year(year) = begin 
@@ -85,7 +85,7 @@ combine_year(year) = begin
         out[i] = if ismissing(year[i]) 
             0.0 
         else
-            trans(sum_VS(year[i][2]))
+            trans(sum_VS(year[i]))
         end
     end
     out
@@ -99,7 +99,7 @@ combine_month(years) = begin
                 val = if ismissing(year[i]) || ismissing(year[i][2][month]) 
                     0.0 
                 else
-                    val = trans(ustrip(year[i][2][month][:VS]))
+                    val = trans(ustrip(year[i][month][:VS]))
                 end
                 out[month][i] = max(out[month][i], val)
             end
@@ -123,25 +123,62 @@ extract_months(year) = begin
     out
 end
 
-trans(x) = log10(1 + x)
+trans(x) = x
 sum_VS(a) = maximum((ustrip(la.VS) for la in a))
 
-build_plot(data, name) = begin
-    hm = heatmap(long, lat, rotl90(data); c=:tempo, legend=false, title=name, clims=(0.0, 9.0))
-    plot!(hm, shp.shapes; 
-          xlim=(long[1], long[end]), ylim=(lat[end], lat[1]), 
+build_plot(data, name, legend) = begin
+    data = rotl90(data) * 25
+    hm = heatmap(long, lat, data; c=:tempo, title=name, clims=(0.0, 9.8), 
+                 legend=legend, colorbar_title="Shoot structural mass (g)")
+    plt = plot!(hm, shp.scalings; 
+          xlim=(long[1]-1, long[end]+1), ylim=(lat[end]-1, lat[1]+1), 
           # xlab="Longitude", ylab="Latitude",
           color=:black, width=2, legend=false
          )
+    longs = getindex.(Ref(long), [65, 60, 55])
+    lats = getindex.(Ref(lat), [35, 35, 35])
+    scatter!(plt, longs, lats; color=:white, markersize=2)
+    annotate!(plt, longs, lats .+ 1, text.(["T1", "T2", "T3"], 7))
 end
 
+scaling_plot(long, lat, points, labels, size, markersize) = begin
+    plt = plot(shp.scalings; 
+          xlim=(long[1]-1, long[end]+1), ylim=(lat[end]-1, lat[1]+1), 
+          # xlab="Longitude", ylab="Latitude",
+          color=:black, width=2, legend=false, size=size
+         )
+    longs = points[1]
+    lats = points[2]
+    scatter!(plt, longs, lats; color=:red, markersize=markersize)
+    plot!(plt, longs, lats; color=:red, linestyle=:dot)
+    annotate!(plt, longs, lats .+ 1, text.(labels, 7))
+end
+points = (getindex.(Ref(long), [65, 60, 55]), getindex.(Ref(lat), [35, 35, 35]))
+scaling_plot(long, lat, points, ["T1", "T2", "T3"], (800,600), 3)
+savefig("plots/scaling.png")
+nswlong = long[45:end]
+nswlat = lat[30:46]
+scaling_plot(nswlong, nswlat, points, ["T1", "T2", "T3"], (300,300), 5)
+savefig("plots/nsw.png")
+
+points = (getindex.(Ref(long), [65]), getindex.(Ref(lat), [35]))
+scaling_plot(nswlong, nswlat, points, "T1", (300, 300), 5)
+savefig("plots/t1scaling.png")
+points = (getindex.(Ref(long), [60]), getindex.(Ref(lat), [35]))
+scaling_plot(nswlong, nswlat, points, "T2", (300, 300), 5)
+savefig("plots/t2scaling.png")
+points = (getindex.(Ref(long), [55]), getindex.(Ref(lat), [35]))
+scaling_plot(nswlong, nswlat, points, "T3", (300, 300), 5)
+savefig("plots/t3scaling.png")
 
 # Plot
 gr()
 # plotly()
+#
 
 year_sums = combine_year.(yearly_outputs)
-plts = build_plot.(year_sums, string.(years))
+plts = build_plot.(year_sums, string.(years), (false, true, false, true, false, true))
+maps = plot(plts...; layout=grid(length(plts)÷2, 2, widths=[0.423, 0.577]), size=(1000,1300), dpi=100)
 
 # month_sums = combine_month(yearly_outputs)
 # plts = build_plot.(month_sums, string.(1:12))
@@ -150,7 +187,5 @@ plts = build_plot.(year_sums, string.(years))
 # plts = build_plot.(months, string.(1:12))
 # data = months[1]
 # name = "test"
-# maximum(year_sums[1])
+maximum(year_sums[6] .* 25)
 
-maps = plot(plts..., layout=(length(plts)÷2, 2), size=(1200,1600), dpi=100)
-# savefig("plots/map.png")

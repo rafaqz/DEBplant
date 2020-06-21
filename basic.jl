@@ -21,7 +21,7 @@ include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 
 organism = models[:init];
 organism = models[:maturity];
-organism = models[:bbiso];
+organism = models[:bb];
 organism = app.savedmodel
 v = organism.records[1].vars
 organism.environment = environments[:t1];
