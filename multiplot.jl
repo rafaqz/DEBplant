@@ -3,7 +3,7 @@ using PlotThemes, LaTeXStrings, Dates
 dir = @__DIR__
 include(joinpath(dir, "load.jl"))
 
-STARTMONTH = 8
+STARTMONTH = 7
 MONTHS = [Dates.LOCALES["english"].months... Dates.LOCALES["english"].months...]
 MONTH_HOURS = 365.25 / 12 * 24hr
 YLIMS = (-3,4)

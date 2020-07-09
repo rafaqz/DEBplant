@@ -1,5 +1,6 @@
 using Setfield, Interact, Blink
-using Plots, UnitfulRecipes, StatsPlots, PlotNested, Codify, Select, ColorSchemes, DimensionalData
+using Plots, UnitfulRecipes, StatsPlots, PlotNested, 
+      Codify, Select, ColorSchemes, DimensionalData
 
 include(joinpath(dir, "load.jl"))
 

@@ -1,5 +1,8 @@
 using PrettyTables, Latexify
 
+dir = @__DIR__
+include(joinpath(dir, "load.jl"))
+
 fn = fieldnameflatten(model)
 val = flatten(model)
 remdups(a) = begin
@@ -13,7 +16,7 @@ remdups(a) = begin
     end
     a
 end
-comp = remdups([string.(parentflatten(model))...])
+comp = remdups([string.(parenttypeflatten(model))...])
 
 desc = metaflatten(model, FieldMetadata.description)
 

@@ -6,8 +6,6 @@ include("multiplot.jl")
 environments, _ = loadenvironments(dir)
 environment = environments[:t1]
 envstart = round(typeof(1hr), STARTMONTH * MONTH_HOURS)
-envstart = 1hr
-envstart = 5000hr
 
 # Load models
 vars = (PlottableVars(), PlottableVars())
