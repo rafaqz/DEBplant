@@ -1,6 +1,6 @@
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "load.jl"))
-include(joinpath(dir, "plantstates.jl"))
+
 using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NCDatasets, JLD2
 using DynamicEnergyBudgets: dead
 
@@ -61,22 +61,27 @@ i = CartesianIndex(65,35)
 envgrid = load_grid(basepath, 2009:2009, shade, SKIPPED)
 environments, _ = loadenvironments(dir)
 # Import models
+vars = (Vars(), Vars())
 models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 model = deepcopy(models[:bb]);
 model.environment_start[] = oneunit(model.environment_start[])
-# @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
-scalingpath = joinpath(basepath, "ausborder/ausborder_polyline.shp")
+scalingpath = joinpath(dir, "data/ausborder_polyline.shp")
 shp = open(scalingpath) do io
     read(io, Shapefile.Handle)
 end
 # Get lat and long coordinates for plotting
 radpath = joinpath(basepath, "SOLR/SOLR_2001.nc")
-long = ncread(radpath, "longitude")
-lat = ncread(radpath, "latitude")
-# JLD2.@save "yearly_outputs.jld" yearly_outputs 
-JLD2.@load "yearly_outputs.jld"
+isfile(basepath)
+long = NCDatasets.read(radpath, "longitude")
+lat = NCDatasets.read(radpath, "latitude")
+if isfile("data/yearly_outputs.jld")
+    JLD2.@load "data/yearly_outputs.jld"
+else
+    # @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
+    # JLD2.@save "data/yearly_outputs.jld" yearly_outputs 
+end
 
 
 combine_year(year) = begin 
@@ -153,6 +158,7 @@ scaling_plot(long, lat, points, labels, size, markersize) = begin
     plot!(plt, longs, lats; color=:red, linestyle=:dot)
     annotate!(plt, longs, lats .+ 1, text.(labels, 7))
 end
+
 points = (getindex.(Ref(long), [65, 60, 55]), getindex.(Ref(lat), [35, 35, 35]))
 scaling_plot(long, lat, points, ["T1", "T2", "T3"], (800,600), 3)
 savefig("plots/scaling.png")

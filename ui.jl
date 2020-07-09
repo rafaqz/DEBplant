@@ -11,7 +11,7 @@ vars = (PlottableVars(), PlottableVars())
 FieldMetadata.flattenable(::AbstractMicroclimate, x) = false
 FieldMetadata.flattenable(::AbstractMicroclimControl, x) = true
 
-u = [1e-4, 1e-4, 1.0, 1e-4, 1e-4, 10.0]u"mol" # Initial value
+# u = [1e-4, 1e-4, 1.0, 1e-4, 1e-4, 10.0]u"mol" # Initial value
 du = fill(0.0u"mol/hr", 6)
 
 # Import models

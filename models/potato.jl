@@ -30,8 +30,8 @@ models[:potato] = Plant(
                 α = 0.23101297000831605,
             ),
             maturity_pars = nothing,
-            trans_pars = nothing,
-            rejection_pars = LosslessRejection(),
+            activetrans_pars = nothing,
+            passivetrans_pars = LosslessPassiveTranslocation(),
             germination_pars = nothing,
             production_pars = nothing,
         ),
@@ -48,8 +48,8 @@ models[:potato] = Plant(
                 α = 0.13219411484660287,
             ),
             maturity_pars = nothing,
-            trans_pars = nothing,
-            rejection_pars = LosslessRejection(),
+            activetrans_pars = nothing,
+            passivetrans_pars = LosslessPassiveTranslocation(),
             germination_pars = nothing,
             production_pars = nothing,
         ),
@@ -65,7 +65,7 @@ models[:potato] = Plant(
             n_N_E = 0.025,
             w_V = 25.0u"g*mol^-1",
         ),
-        resorption_pars = StructuralLossResorption(
+        resorption_pars = LosslessResorption(
             K_resorption = 8.697490026177835e-6,
         ),
         tempcorr_pars = ParentTardieu(

@@ -4,9 +4,9 @@ models[:bbiso] = Plant(
     time = 0hr:1hr:8760hr*2,
     params = (
         Params(
-            assimilation_pars = BBPotentialCAssim(
+            assimilation_pars = BallBerryPotentialCAssim(
                 photoparams = FvCBEnergyBalance(
-                    radiation_conductance = YingPingRadiationConductance(
+                    radiation_conductance = WangRadiationConductance(
                         rdfipt = 1.0,
                         tuipt = 1.0,
                         tdipt = 1.0,
@@ -69,8 +69,8 @@ models[:bbiso] = Plant(
                 α = 0.2,
             ),
             maturity_pars = nothing,
-            trans_pars = nothing,
-            rejection_pars = LosslessRejection(),
+            activetrans_pars = nothing,
+            passivetrans_pars = LosslessPassiveTranslocation(),
             germination_pars = nothing,
             production_pars = nothing,
         ),
@@ -84,8 +84,8 @@ models[:bbiso] = Plant(
                 α = 0.2,
             ),
             maturity_pars = nothing,
-            trans_pars = nothing,
-            rejection_pars = LosslessRejection(),
+            activetrans_pars = nothing,
+            passivetrans_pars = LosslessPassiveTranslocation(),
             germination_pars = nothing,
             production_pars = nothing,
         ),
@@ -101,7 +101,7 @@ models[:bbiso] = Plant(
             n_N_E = 0.025,
             w_V = 25.0u"g*mol^-1",
         ),
-        resorption_pars = StructuralLossResorption(
+        resorption_pars = LosslessResorption(
             K_resorption = 1.0e-6,
         ),
         tempcorr_pars = ParentTardieu(

@@ -2,8 +2,6 @@ using Setfield, Interact, Blink
 using Plots, UnitfulRecipes, StatsPlots, PlotNested, Codify, Select, ColorSchemes, DimensionalData
 
 include(joinpath(dir, "load.jl"))
-include(joinpath(dir, "plantstates.jl"))
-include(joinpath(dir, "util/hide.jl"))
 
 mutable struct ModelApp{M,E,PS,T}
     models::M
@@ -14,24 +12,6 @@ mutable struct ModelApp{M,E,PS,T}
 end
 
 init_state(modelobs::Observable) = init_state(modelobs[])
-init_state(model::AbstractOrganism) = init_state(has_reserves.(define_organs(model, 1hr)), model)
-init_state(::NTuple{2,HasCN}, model) = begin
-    xdim = dims(first(model.records).J, X)
-    xval = DimensionalData.unwrap(val(xdim))
-    A = zeros(length(xdim) * length(model.records)) * mol
-    newxval = Val((map(x -> Symbol(x, :S), xval)..., map(x -> Symbol(x, :R), xval)...))
-    newxdim = X(newxval, mode(xdim), nothing)
-    u = DimensionalArray(A, (newxdim,))
-
-    u[:VS] = 0.2mg / (25.0g/mol)
-    u[:CS] = 5.0mg  / (25.0g/mol)
-    u[:NS] = 0.2mg  / (25.0g/mol)
-    u[:VR] = 0.04mg / (25.0g/mol)
-    u[:CR] = 1.0mg  / (25.0g/mol)
-    u[:NR] = 0.04mg  / (25.0g/mol)
-    u
-end
-init_state(::NTuple{2,HasCNE}, model) = [0.0, 1e-4, 0.0, 1e-4, 1e-4, 1e-4, 0.0, 1e-4, 0.0, 1e-4, 1e-4, 0.01]mol
 
 pot(p, x) = 1 #potential_dependence(p.potential_modifier, x)
 
@@ -66,8 +46,6 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
 
     app.savedmodel = m2
 
-    # println("tstop: ", ustrip(tstop))
-    # println("num params: ", length(params))
     prob = DiscreteProblem{true}(m2, ustrip(u), (one(tstop), ustrip(tstop)))
     local sol
     try
@@ -80,10 +58,10 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     statelabels = DimensionalData.unwrap(val(dims(u, X)))
     solplot1 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[1:n...], plotdensity=400, legend=:topleft,
                     labels=reshape([statelabels[1:n]...], 1, n), ylabel="State (CMol)",
-                    xlabel=string(m2.params[1].name, " : ",  typeof(m2.params[1].assimilation_pars).name, " - time (hr)"))
+                    xlabel=string(typeof(m2.params[1].assimilation_pars).name, " - time (hr)"))
     solplot2 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[n+1:2n...], plotdensity=400, legend=:topleft,
                     labels=reshape([statelabels[n+1:2n]...], 1, n), ylabel="State (CMol)",
-                    xlabel=string(m2.params[2].name, " : ", typeof(m2.params[2].assimilation_pars).name, " - time (hr)"))
+                    xlabel=string(typeof(m2.params[2].assimilation_pars).name, " - time (hr)"))
     # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
     # s = sol' # .* m2.shared.core_pars.w_V
     # s1 = view(s, :, 1:6)
@@ -114,9 +92,7 @@ function make_plot(u::AbstractVector, solplots, varsbools, envbools, flux,
     fluxplots = []
     if length(flux) > 0
         plot_fluxes!(fluxplots, flux[1], model.records[1].J, tspan)
-        plot_fluxes!(fluxplots, flux[2], model.records[1].J1, tspan)
-        plot_fluxes!(fluxplots, flux[3], model.records[2].J, tspan)
-        plot_fluxes!(fluxplots, flux[4], model.records[2].J1, tspan)
+        plot_fluxes!(fluxplots, flux[2], model.records[2].J, tspan)
     end
 
     subplots = ( 
@@ -377,16 +353,13 @@ function colorforeach(parents)
 end
 
 state_slider(label, val) =
-slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=string(label), value=val)
+    slider(vcat(exp10.(range(-6, stop = 1, length = 100))) * mol, label=string(label), value=val)
 
 build_flux_grids(::Records) = vbox(), () 
 build_flux_grids(records::PlottableRecords) = begin
     J = records.J
-    J1 = records.J1
     J_axislabels = map(d -> DynamicEnergyBudgets.unwrap(val(d)), dims(J, (X, Y)))
-    J1_axislabels = map(d -> DynamicEnergyBudgets.unwrap(val(d)), dims(J1, (X, Y)))
-    flux_grids = (build_flux_grid(J_axislabels...), build_flux_grid(J1_axislabels...),
-                  build_flux_grid(J_axislabels...), build_flux_grid(J1_axislabels...));
+    flux_grids = (build_flux_grid(J_axislabels...), build_flux_grid(J_axislabels...));
     fluxbox = vbox(subtitle("Plot Internal Flux"), hbox(arrange_grid.(flux_grids)...))
     fluxobs = map((g...) -> g, observe_grid.(flux_grids)...)
     fluxbox, fluxobs
