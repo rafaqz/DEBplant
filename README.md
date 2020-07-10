@@ -1,7 +1,7 @@
 These scripts accompany the paper:
 
 "Integrating dynamic plant growth models and microclimates for species
-distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in
+distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in the
 Journal of Ecological modelling.
 
 ![Transect simulaitons over a decade](https://media.githubusercontent.com/media/rafaqz/DEBScripts/master/plots/all.png)
@@ -14,7 +14,7 @@ To set up, run julia in this folder, then run:
 
 ```julia-repl
 ]
-activeate .
+activate .
 instantiate
 ```
 
