@@ -1,6 +1,6 @@
 using PlotThemes, LaTeXStrings, Dates
 
-dir = @__DIR__
+dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "load.jl"))
 
 STARTMONTH = 7
