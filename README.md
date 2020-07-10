@@ -4,6 +4,8 @@ These scripts accompany the paper:
 distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in
 Journal of Ecological modelling.
 
+![Transect simulaitons over a decade](https://media.githubusercontent.com/media/rafaqz/DEBScripts/master/plots/all.png)
+
 Scripts are provided for building al the plots from the paper, and also for
 using the interactive user-interface used to examine and simplify the model.
 
