@@ -1,4 +1,5 @@
 # Build location microclimates from Microclim datasets
+# Mostly we just load the saved locations from JLD files
 
 using Revise, Unitful, Microclimate, JLD2, DataStructures
 using Unitful: W, m, °C, hr, mol, K, s, J, Mg, kg, kPa, Pa

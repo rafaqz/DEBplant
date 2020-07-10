@@ -1,6 +1,9 @@
 dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 
-include("multiplot.jl")
+
+# Line Plots ####################################################
+
+include("plotmethods.jl")
 
 # Load environments at t1
 environments, _ = loadenvironments(dir)
@@ -50,3 +53,45 @@ plot(x -> tempcorr(tempcorr_pars(model.shared), K(x)), temps;
     ylabel="Correction",
     xlabel="Temperature"
 )
+
+
+
+
+# Map #################################################################
+
+include("mapping.jl")
+
+points = (getindex.(Ref(long), [65, 60, 55]), getindex.(Ref(lat), [35, 35, 35]))
+scaling_plot(long, lat, points, ["T1", "T2", "T3"], (800,600), 3)
+savefig("plots/scaling.png")
+nswlong = long[45:end]
+nswlat = lat[30:46]
+scaling_plot(nswlong, nswlat, points, ["T1", "T2", "T3"], (300,300), 5)
+savefig("plots/nsw.png")
+
+points = (getindex.(Ref(long), [65]), getindex.(Ref(lat), [35]))
+scaling_plot(nswlong, nswlat, points, "T1", (300, 300), 5)
+savefig("plots/t1scaling.png")
+points = (getindex.(Ref(long), [60]), getindex.(Ref(lat), [35]))
+scaling_plot(nswlong, nswlat, points, "T2", (300, 300), 5)
+savefig("plots/t2scaling.png")
+points = (getindex.(Ref(long), [55]), getindex.(Ref(lat), [35]))
+scaling_plot(nswlong, nswlat, points, "T3", (300, 300), 5)
+savefig("plots/t3scaling.png")
+
+# Plot
+gr()
+
+year_sums = combine_year.(yearly_outputs)
+plts = build_plot.(year_sums, string.(years), (false, true, false, true, false, true))
+maps = plot(plts...; layout=grid(length(plts)÷2, 2, widths=[0.423, 0.577]), size=(1000,1300), dpi=100)
+
+# month_sums = combine_month(yearly_outputs)
+# plts = build_plot.(month_sums, string.(1:12))
+
+# months = extract_months(yearly_outputs[2])
+# plts = build_plot.(months, string.(1:12))
+# data = months[1]
+# name = "test"
+maximum(year_sums[6] .* 25)
+
