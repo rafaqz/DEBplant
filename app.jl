@@ -47,7 +47,7 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
 
     app.savedmodel = m2
 
-    prob = DiscreteProblem{true}(m2, ustrip(u), (one(tstop), ustrip(tstop)))
+    prob = DiscreteProblem{true}(m2, ustrip.(u), (one(tstop), ustrip(tstop)))
     local sol
     try
         sol = solve(prob, FunctionMap(scale_by_time = true))
@@ -57,12 +57,20 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
     end
     n = length(u) ÷ 2 
     statelabels = DimensionalData.unwrap(val(dims(u, X)))
-    solplot1 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[1:n...], plotdensity=400, legend=:topleft,
-                    labels=reshape([statelabels[1:n]...], 1, n), ylabel="State (CMol)",
-                    xlabel=string(typeof(m2.params[1].assimilation_pars).name, " - time (hr)"))
-    solplot2 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[n+1:2n...], plotdensity=400, legend=:topleft,
-                    labels=reshape([statelabels[n+1:2n]...], 1, n), ylabel="State (CMol)",
-                    xlabel=string(typeof(m2.params[2].assimilation_pars).name, " - time (hr)"))
+    solplot1 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[1:n...]; 
+        plotdensity=400, 
+        legend=:topleft,
+        # labels=reshape([statelabels[1:n]...], 1, n), 
+        ylabel="State (CMol)",
+        xlabel=string(typeof(m2.params[1].assimilation_pars).name, " - time (hr)")
+    )
+    solplot2 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[n+1:2n...]; 
+        plotdensity=400, 
+        legend=:topleft,
+        # labels=reshape([statelabels[n+1:2n]...], 1, n), 
+        ylabel="State (CMol)",
+        xlabel=string(typeof(m2.params[2].assimilation_pars).name, " - time (hr)")
+    )
     # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
     # s = sol' # .* m2.shared.core_pars.w_V
     # s1 = view(s, :, 1:6)
@@ -109,10 +117,11 @@ function make_plot(u::AbstractVector, solplots, varsbools, envbools, flux,
     state = split_state(organs, u, 0)
     subplots = []
 
-    plottemp && push!(subplots, plot(x -> tempcorr(tempcorr_pars(o), x), K(0.0°C):1.0K:K(50.0°C),
-                                     legend=false, ylabel="Correction", xlabel="°C"))
+    plottemp && push!(subplots, 
+                      plot(x -> tempcorr(tempcorr_pars(o), x), K(0.0°C):1.0K:K(50.0°C);
+                           legend=false, ylabel="Correction", xlabel="°C"))
     plotscaling && push!.(Ref(subplots), plot_scaling.(model.params))
-    plotphoto && push!(subplots, plot(x -> photo(o, state[1], x), (0*W*m^-2:5*W*m^-2:1000*W*m^-2),
+    plotphoto && push!(subplots, plot(x -> photo(o, state[1], x), (0*W*m^-2:5*W*m^-2:1000*W*m^-2);
                                       ylabel="C uptake", xlabel="Irradiance"))
     plotpot && push!(subplots, plot(x -> pot(assimilation_pars(o), x), (0.0kPa:-10.0kPa:-5000kPa),
                                     ylabel="C uptake modification", xlabel="Soil water potential"))
