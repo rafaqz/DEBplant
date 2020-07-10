@@ -1,4 +1,14 @@
-To set up, run julia in this folder, then run 
+These scripts accompany the paper:
+
+"Integrating dynamic plant growth models and microclimates for species
+distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in
+Journal of Ecological modelling.
+
+Scripts are provided for building al the plots from the paper, and also for
+using the interactive user-interface used to examine and simplify the model.
+
+
+To set up, run julia in this folder, then run:
 
 ```julia-repl
 ]
@@ -8,10 +18,15 @@ instantiate
 
 Where `]` gets you into Pkg mode in the REPL. 
 
+After that you can use the scripts:
 
-After that you can run the scripts.
+- ui.jl loads the interactive user interface
+- paper_plots.jl builds plots for the paper
 
-- ui.jl loads the interactive user interface.
-- multiplot.jl builds the transect plots for the paper
-- ausmap.jl builds the australia distribution map.
-- tables.jl builds the parameter tables in the paper.
+As loading all the packages will take quite a while, load these in a julia
+session that you keep open (ie in Atom/Juno), instead of running them from the
+command line each time.
+
+
+If you have any problems, open an issue in this repository, including your
+version of Julia, description of the problem and error outputs where necessary.
