@@ -1,7 +1,6 @@
 using PlotThemes, LaTeXStrings, Dates
 
-dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
-include(joinpath(dir, "load.jl"))
+include(joinpath(dirname(@__FILE__), "load.jl"))
 
 STARTMONTH = 7
 MONTHS = [Dates.LOCALES["english"].months... Dates.LOCALES["english"].months...]

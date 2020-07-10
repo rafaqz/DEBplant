@@ -2,7 +2,7 @@ using Setfield, Interact, Blink
 using Plots, UnitfulRecipes, StatsPlots, PlotNested, 
       Codify, Select, ColorSchemes, DimensionalData
 
-include(joinpath(dir, "load.jl"))
+include(joinpath(dirname(@__FILE__), "load.jl"))
 
 mutable struct ModelApp{M,E,PS,T}
     models::M

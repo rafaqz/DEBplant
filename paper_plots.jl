@@ -2,7 +2,7 @@ dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 
 # Line Plots ####################################################
 
-include(joinpath(dir, "plotmethods.jl"))
+include(joinpath(dir, "src/plotmethods.jl"))
 
 # Load environments at t1
 environments, _ = loadenvironments(dir)
