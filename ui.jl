@@ -32,10 +32,21 @@ models = OrderedDict()
 modeldir = joinpath(dir, "models")
 include.(joinpath.(Ref(modeldir), readdir(modeldir)));
 
-# Build the app interface
-plotly() # Use Plotly.js. Alternatively use gr()
+# Set up the plot
+plotly() # Use Plotly for plotting - can be zoomed in
+# gr() # Use GR for plotting
+# theme(:sand)
+# theme(:solarized)
+# theme(:juno)
+theme(:solarized_light)
+# theme(:wong2)
 plotsize = (2000, 1000) # Set plot size in ui
+
+# Build the app interface
 app = ModelApp(models, environments, plotsize, tspan, nothing);
 
-# Create an electron desktop app
-electronapp(app; zoom=0.6)
+# Run the app in Atom
+# display(app)
+
+# Or create an electron desktop app
+electronapp(app; zoom=0.4)

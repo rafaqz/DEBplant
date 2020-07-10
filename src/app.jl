@@ -56,18 +56,17 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
         return plot(), plot()
     end
     n = length(u) ÷ 2 
-    statelabels = DimensionalData.unwrap(val(dims(u, X)))
     solplot1 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[1:n...]; 
         plotdensity=400, 
         legend=:topleft,
-        # labels=reshape([statelabels[1:n]...], 1, n), 
+        labels=reshape([STATELABELS[1:n]...], 1, n), 
         ylabel="State (CMol)",
         xlabel=string(typeof(m2.params[1].assimilation_pars).name, " - time (hr)")
     )
     solplot2 = plot(sol, tspan=ustrip.((plotstart, tstop)), vars=[n+1:2n...]; 
         plotdensity=400, 
         legend=:topleft,
-        # labels=reshape([statelabels[n+1:2n]...], 1, n), 
+        labels=reshape([STATELABELS[n+1:2n]...], 1, n), 
         ylabel="State (CMol)",
         xlabel=string(typeof(m2.params[2].assimilation_pars).name, " - time (hr)")
     )
@@ -110,7 +109,10 @@ function make_plot(u::AbstractVector, solplots, varsbools, envbools, flux,
         envplots..., 
         fluxplots...
     )
-    timeplots = plot(subplots...; layout=Plots.GridLayout(length(subplots), 1))
+    timeplots = plot(subplots...; 
+        layout=Plots.GridLayout(length(subplots), 1),
+        legend=:topleft,
+    )
 
     organs = define_organs(model, 1hr)
     o = organs[1]

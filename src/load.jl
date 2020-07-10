@@ -12,7 +12,7 @@ using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, g, mg, cm, m, s, hr, d,
 import Plots:px, pct, GridLayout
 
 loadenvironments(dir) = begin
-    locationspath = joinpath(dir, "microclimate/locations.jld")
+    locationspath = joinpath(dir, "data/locations.jld")
     @load locationspath t1 t2 t3
     environments = OrderedDict{Symbol,Any}(:t1 => t1, :t2 => t2, :t3 => t3)
     env = t1
