@@ -1,7 +1,7 @@
 #=
-A DEB model user interface. This allows manual construction
-and parametrisation of a DEB plant model, run with forcing variables
-from microclimate data.
+A DEB plant user-interface. This allows manual construction
+and parametrisation of the DEB plant model, run with forcing 
+variables from microclimate data.
 
 You can swap out any model components by selecting them from the dropdowns
 and hitting the "Reload" button. It should give you an updated set of sliders
@@ -22,15 +22,11 @@ dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 # Load the app scripts
 include(joinpath(dir, "src/app.jl"))
 
- # Import environments 
+ # Load environments 
 environments, tspan = loadenvironments(dir);
 environments[:controls] = MicroclimControl();
 
-# Import models
-vars = (PlottableVars(), PlottableVars())
-models = OrderedDict()
-modeldir = joinpath(dir, "models")
-include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+models = load_models(dir)
 
 # Set up the plot
 plotly() # Use Plotly for plotting - can be zoomed in
@@ -50,3 +46,5 @@ app = ModelApp(models, environments, plotsize, tspan, nothing);
 
 # Or create an electron desktop app
 electronapp(app; zoom=0.4)
+
+# TODO: check saved code files: vars?

@@ -9,7 +9,7 @@ environments, _ = loadenvironments(dir)
 environment = environments[:t1]
 envstart = round(typeof(1hr), STARTMONTH * MONTH_HOURS)
 
-# Load models
+# Load models from source code
 vars = (PlottableVars(), PlottableVars())
 models = OrderedDict()
 include.(readdir(joinpath(dir, "models"); join=true));
