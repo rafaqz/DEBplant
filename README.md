@@ -4,8 +4,7 @@ These scripts accompany the paper:
 distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in the
 Journal of Ecological modelling.
 
-![Transect simulaitons over a decade](https://media.githubusercontent.com/media/rafaqz/DEBScripts/master/plots/all.png)
-
+![Transect simulations](https://media.githubusercontent.com/media/rafaqz/DEBplant/master/plots/all.png)
 _Growth plots at three transect locations in NSW, Australia, starting each month for 6 years_ 
 
 Scripts are provided for building al the plots from the paper, and also for
