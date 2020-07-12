@@ -32,3 +32,7 @@ command line each time.
 
 If you have any problems, open an issue in this repository, including your
 version of Julia, description of the problem and error outputs where necessary.
+
+
+
+![User interface](https://media.githubusercontent.com/media/rafaqz/DEBplant/master/plots/ui.png)
