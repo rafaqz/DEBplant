@@ -21,7 +21,7 @@ instantiate
 
 Where `]` gets you into Pkg mode in the REPL. 
 
-After that you can use the scripts:
+After that you can hit escape to leave the Pkg mode, and use the scripts:
 
 - ui.jl loads the interactive user interface
 - paper_plots.jl builds plots for the paper
