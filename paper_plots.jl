@@ -96,13 +96,12 @@ shp = open(shapefile) do io
     read(io, Shapefile.Handle)
 end
 
-if isfile(join(dir, "data/yearly_outputs.jld2"))
-    yearly_outputs = JLD2.load("data/yearly_outputs.jld2", "yearly_outputs")
+if isfile(joinpath(dir, "data/yearly_outputs.jld2"))
+    yearly_outputs = load("data/yearly_outputs.jld2", "yearly_outputs")
 else
     @time yearly_outputs = map(y -> run_year(y, datapath, shade, model, skip), years)
     save("data/yearly_outputs.jld2", Dict("yearly_outputs" => yearly_outputs))
 end
-yearly_outputs
 
 
 # Simple outline plots
@@ -117,16 +116,6 @@ savefig("plots/nsw.png")
 # Maxium structural mass plot
 gr()
 maximum(skipmissing(yearly_outputs[1]))
-yearly_outputs[1][20, 20]
 year_sums = combine_year.(yearly_outputs)
 plts = build_plot.(year_sums, string.(years), (false, true, false, true, false, true))
 maps = plot(plts...; layout=grid(length(plts)÷2, 2, widths=[0.423, 0.577]), size=(1000,1300), dpi=100)
-
-# month_sums = combine_month(yearly_outputs)
-# plts = build_plot.(month_sums, string.(1:12))
-
-# months = extract_months(yearly_outputs[2])
-# plts = build_plot.(months, string.(1:12))
-# data = months[1]
-# name = "test"
-# maximum(year_sums[6] .* 25)
