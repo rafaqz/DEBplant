@@ -26,7 +26,10 @@ include(joinpath(dir, "src/app.jl"))
 environments, tspan = loadenvironments(dir);
 environments[:controls] = MicroclimControl();
 
-models = load_models(dir)
+# Load models
+vars = (PlottableVars(), PlottableVars())
+models = OrderedDict()
+include.(readdir(joinpath(dir, "models"); join=true));
 
 # Set up the plot
 plotly() # Use Plotly for plotting - can be zoomed in
@@ -34,9 +37,10 @@ plotly() # Use Plotly for plotting - can be zoomed in
 # theme(:sand)
 # theme(:solarized)
 # theme(:juno)
-theme(:solarized_light)
-# theme(:wong2)
-plotsize = (2000, 1000) # Set plot size in ui
+# theme(:solarized_light)
+theme(:wong2)
+theme(:default)
+# plotsize = (2000, 1000) # Set plot size in ui
 
 # Build the app interface
 app = ModelApp(models, environments, plotsize, tspan, nothing);
@@ -45,6 +49,6 @@ app = ModelApp(models, environments, plotsize, tspan, nothing);
 # display(app)
 
 # Or create an electron desktop app
-electronapp(app; zoom=0.4)
+electronapp(app; zoom=0.5)
 
 # TODO: check saved code files: vars?

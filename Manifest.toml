@@ -230,6 +230,12 @@ git-tree-sha1 = "c437a9c2114c7ba19322712e58942b383ffbd6c0"
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
 version = "4.0.3"
 
+[[DBFTables]]
+deps = ["Printf", "Tables", "WeakRefStrings"]
+git-tree-sha1 = "b7195411ad63b60ffd7785c0e8c80fd004705912"
+uuid = "75c7ada1-017a-5fb6-b8c7-2125ff2d6c93"
+version = "0.2.2"
+
 [[DataAPI]]
 git-tree-sha1 = "176e23402d80e7743fc26c19c681bfb11246af32"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
@@ -319,7 +325,7 @@ version = "0.8.2"
 
 [[DynamicEnergyBudgets]]
 deps = ["ConstructionBase", "DimensionalData", "DocStringExtensions", "FieldDefaults", "FieldDocTables", "FieldMetadata", "Flatten", "MacroTools", "Mixers", "Requires", "Setfield", "SimpleRoots", "StaticArrays", "Unitful"]
-git-tree-sha1 = "a4369b8db732f3db186a6d17f4dfea5304177550"
+git-tree-sha1 = "38431a630c662f4954cf69b47634f4df2d48f83b"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
@@ -409,9 +415,10 @@ uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
 version = "2.4.1"
 
 [[FixedPointNumbers]]
-git-tree-sha1 = "8fb797c37a3b7ced4327a05ac4ca0dd6a4f1ba92"
+deps = ["Statistics"]
+git-tree-sha1 = "266baee2e9d875cb7a3bfdcc6cab553c543ff8ab"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-version = "0.8.1"
+version = "0.8.2"
 
 [[FlameGraphs]]
 deps = ["AbstractTrees", "Colors", "FileIO", "FixedPointNumbers", "IndirectArrays", "LeftChildRightSiblingTrees", "Profile"]
@@ -421,11 +428,11 @@ version = "0.2.3"
 
 [[Flatten]]
 deps = ["ConstructionBase", "FieldMetadata"]
-git-tree-sha1 = "fcf57d87dc7b58c0f3a9e54c3e742d10b710170c"
+git-tree-sha1 = "c110314771a9b3d53a6dbcdaeecd58cfcc447ffc"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Flatten.jl"
 uuid = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
-version = "0.3.4"
+version = "0.3.5"
 
 [[Fontconfig_jll]]
 deps = ["Bzip2_jll", "Expat_jll", "FreeType2_jll", "Libdl", "Libuuid_jll", "Pkg", "Zlib_jll"]
@@ -490,6 +497,12 @@ git-tree-sha1 = "62909c3eda8a25b5673a367d1ad2392ebb265211"
 uuid = "01680d73-4ee2-5a08-a1aa-533608c188bb"
 version = "0.3.0"
 
+[[GeoInterface]]
+deps = ["RecipesBase"]
+git-tree-sha1 = "62f6ed44e73c11d10e282053d70b33b0ed8dcbe2"
+uuid = "cf35fbd7-0cd7-5166-be24-54bfbe79505f"
+version = "0.5.4"
+
 [[GeometryBasics]]
 deps = ["IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
 git-tree-sha1 = "119f32f9c2b497b49cd3f7f513b358b82660294c"
@@ -513,6 +526,12 @@ deps = ["Gettext_jll", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "P
 git-tree-sha1 = "09ea3797c586eedbb383eb8f1c950a12923f1541"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.59.0+2"
+
+[[GraphRecipes]]
+deps = ["AbstractTrees", "GeometryTypes", "InteractiveUtils", "Interpolations", "LightGraphs", "LinearAlgebra", "NaNMath", "NetworkLayout", "PlotUtils", "RecipesBase", "SparseArrays", "Statistics"]
+git-tree-sha1 = "a8619f8715d92cfc9d56a549a0d459bb655ae113"
+uuid = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
+version = "0.5.4"
 
 [[Graphene_jll]]
 deps = ["Glib_jll", "Libdl", "Pkg"]
@@ -876,10 +895,8 @@ uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.1"
 
 [[Microclimate]]
-deps = ["FieldDefaults", "FieldMetadata", "NCDatasets", "Unitful"]
-git-tree-sha1 = "4d8655b8b1198174c16868b574feb76e1b18a45f"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/Microclimate.jl"
+deps = ["NCDatasets", "Unitful"]
+path = "/home/raf/julia/Microclimate"
 uuid = "e0eb800d-4a9f-54ae-b0f8-217228d9d7c3"
 version = "0.0.0"
 
@@ -955,6 +972,12 @@ deps = ["BinDeps", "CondaBinDeps", "DiskArrays", "Formatting", "Libdl"]
 git-tree-sha1 = "0c6a63d16e9261bf2fa4eecbab575ae7e7fef11c"
 uuid = "30363a11-5582-574a-97bb-aa9a979735b9"
 version = "0.10.2"
+
+[[NetworkLayout]]
+deps = ["DelimitedFiles", "GeometryTypes", "LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "adde9ad01842a4f62c3724b8707bed90293f0f3f"
+uuid = "46757867-2c16-5918-afeb-47bfcb05e46a"
+version = "0.2.0"
 
 [[Observables]]
 git-tree-sha1 = "11832878355305984235a2e90d0e3737383c634c"
@@ -1249,9 +1272,15 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
 [[Setfield]]
 deps = ["ConstructionBase", "Future", "MacroTools", "Requires"]
-git-tree-sha1 = "7a151f918819326a6003dba451dabe65f8c0f6fb"
+git-tree-sha1 = "d5640fc570fb1b6c54512f0bd3853866bd298b3e"
 uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
-version = "0.6.0"
+version = "0.7.0"
+
+[[Shapefile]]
+deps = ["DBFTables", "GeoInterface", "Tables"]
+git-tree-sha1 = "4f3d420478963e48b04fd65d193804c5e9197117"
+uuid = "8e980c4a-a4fe-5da2-b3a7-4b4b0353a2f4"
+version = "0.6.2"
 
 [[SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
@@ -1439,6 +1468,12 @@ deps = ["Libdl", "Pkg", "Wayland_jll"]
 git-tree-sha1 = "d53533e9cbc71f1274b20f4af76c4f13e6e4a8a0"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.18.0+1"
+
+[[WeakRefStrings]]
+deps = ["DataAPI", "Random", "Test"]
+git-tree-sha1 = "28807f85197eaad3cbd2330386fac1dcb9e7e11d"
+uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+version = "0.6.2"
 
 [[WebIO]]
 deps = ["AssetRegistry", "Base64", "Distributed", "FunctionalCollections", "JSON", "Logging", "Observables", "Pkg", "Random", "Requires", "Sockets", "UUIDs", "WebSockets", "Widgets"]

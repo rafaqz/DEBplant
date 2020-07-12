@@ -13,7 +13,6 @@ DPI = 150
 STARTYR = 2005
 STOPYR = 2011
 YEARS = STOPYR-STARTYR
-STATELABELS = ["VS", "CS", "NS", "VR", "CR", "NR"]
 SMALLFONT = 6
 ALPHA = 1.0
 ENVLABELS = (swp="Soil water\npotential", vpd="Vapour press.\ndeficit", st="Soil\ntemperature")

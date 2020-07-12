@@ -1,9 +1,9 @@
-include(joinpath(dir, "load.jl"))
+include(joinpath(dirname(@__FILE__), "load.jl"))
 
 using Statistics, Shapefile, GraphRecipes, StatsBase, Microclimate, NCDatasets, JLD2
 using DynamicEnergyBudgets: dead
 
-runsims(i, mask, model, largeseed, envgrid, tspan, year) =
+runsims(i, mask, model, u, envgrid, tspan, year) =
     if ismissing(mask) 
         missing
     else
@@ -13,8 +13,7 @@ runsims(i, mask, model, largeseed, envgrid, tspan, year) =
         model = @set model.environment = env
         # Round to the start of a day
         tstop = tspan - oneunit(tspan)
-        # smallseed_sol = typeof(smallseed)[]
-        largeseed_sol = typeof(largeseed)[]
+        u_sol = typeof(u)[]
         envstart = oneunit(MONTH_HOURS)
         # Run for each month
         while (envstart + tspan) < length(radiation(env)) * hr
@@ -22,65 +21,32 @@ runsims(i, mask, model, largeseed, envgrid, tspan, year) =
             model.environment_start[] = envstart_hour
             # Run model in this environment
             model.dead[] = false
-            model = set_allometry(model, largeseed)
-            sol = discrete_solve(model, largeseed, tstop)
-            push!(largeseed_sol, dead(model) ? zero(sol) : sol)
+            model = set_allometry(model, u)
+            sol = discrete_solve(model, u, tstop)
+            push!(u_sol, dead(model) ? zero(sol) : sol)
             envstart += MONTH_HOURS
         end
-        largeseed_sol
+        u_sol
     end
 
-run_year(year, basepath, shade, model) = begin
+run_year(year, datapath, shade, model, skip) = begin
     years = year:year+1
     println("running $years")
-    envgrid = load_grid(basepath, years, shade, SKIPPED)
+    envgrid = load_grid(datapath, years, shade, skip)
     masklayer = airtemperature(envgrid)[1][1][:,:,1]
     tspan = 8759hr
-    u = zeros(12)mol
-    ulabelled = LArray{LABELS}(u)
-    runsims.(CartesianIndices(masklayer), masklayer, Ref.((model, largeseed, envgrid, tspan, year))...)
+    u = zeros(6)mol
+    ulabelled = DimArray(u, X(Val(Tuple(Symbol.(STATELABELS)))))
+    runsims.(CartesianIndices(masklayer), masklayer, Ref.((model, ulabelled, envgrid, tspan, year))...)
 end
 
-# envgrid = load_grid(basepath, years, shade, SKIPPED)
+# envgrid = load_grid(datapath, years, shade, SKIPPED)
 # masklayer = airtemperature(envgrid)[1][1][:,:,1]
 # for i = CartesianIndices(masklayer)
     # println(i)
     # envs = MicroclimPoint(envgrid, i)
 # end
 #
-
-#using NetCDF
-const SKIPPED = (:snowdepth, :soilwatercontent) 
-const LABELS = (:VS, :CS, :NS, :ES, :VR, :CR, :NR)
-MONTH_HOURS = 365.25 / 12 * 24hr
-basepath = "/home/raf/Data/microclim"
-years = 2005:2010
-shade = 0
-i = CartesianIndex(65,35)
-envgrid = load_grid(basepath, 2009:2009, shade, SKIPPED)
-environments, _ = loadenvironments(dir)
-# Import models
-vars = (Vars(), Vars())
-models = OrderedDict()
-modeldir = joinpath(dir, "models")
-include.(joinpath.(Ref(modeldir), readdir(modeldir)));
-model = deepcopy(models[:bb]);
-model.environment_start[] = oneunit(model.environment_start[])
-scalingpath = joinpath(dir, "data/ausborder_polyline.shp")
-shp = open(scalingpath) do io
-    read(io, Shapefile.Handle)
-end
-# Get lat and long coordinates for plotting
-radpath = joinpath(basepath, "SOLR/SOLR_2001.nc")
-isfile(basepath)
-long = NCDatasets.read(radpath, "longitude")
-lat = NCDatasets.read(radpath, "latitude")
-if isfile("data/yearly_outputs.jld")
-    JLD2.@load "data/yearly_outputs.jld"
-else
-    # @time yearly_outputs = run_year.(years, Ref(basepath), shade, Ref(model));
-    # JLD2.@save "data/yearly_outputs.jld" yearly_outputs 
-end
 
 
 combine_year(year) = begin 
@@ -89,7 +55,7 @@ combine_year(year) = begin
         out[i] = if ismissing(year[i]) 
             0.0 
         else
-            trans(sum_VS(year[i]))
+            trans(sum_structural_mass(year[i]))
         end
     end
     out
@@ -128,13 +94,13 @@ extract_months(year) = begin
 end
 
 trans(x) = x
-sum_VS(a) = maximum((ustrip(la.VS) for la in a))
+sum_structural_mass(as) = maximum((ustrip.(A[:VS]) for A in as))
 
 build_plot(data, name, legend) = begin
     data = rotl90(data) * 25
     hm = heatmap(long, lat, data; c=:tempo, title=name, clims=(0.0, 9.8), 
                  legend=legend, colorbar_title="Shoot structural mass (g)")
-    plt = plot!(hm, shp.scalings; 
+    plt = plot!(hm, shp.shapes; 
           xlim=(long[1]-1, long[end]+1), ylim=(lat[end]-1, lat[1]+1), 
           # xlab="Longitude", ylab="Latitude",
           color=:black, width=2, legend=false
@@ -145,8 +111,8 @@ build_plot(data, name, legend) = begin
     annotate!(plt, longs, lats .+ 1, text.(["T1", "T2", "T3"], 7))
 end
 
-scaling_plot(long, lat, points, labels, size, markersize) = begin
-    plt = plot(shp.scalings; 
+shape_plot(long, lat, points, labels, size, markersize) = begin
+    plt = plot(shp.shapes; 
           xlim=(long[1]-1, long[end]+1), ylim=(lat[end]-1, lat[1]+1), 
           # xlab="Longitude", ylab="Latitude",
           color=:black, width=2, legend=false, size=size

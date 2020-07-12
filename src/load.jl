@@ -1,7 +1,7 @@
 using Setfield
 using Unitful, Plots, UnitfulRecipes, Microclimate, DataStructures, Flatten, FieldMetadata, 
       LabelledArrays, OrdinaryDiffEq, Photosynthesis, DynamicEnergyBudgets, 
-      DataStructures, ColorSchemes, JLD2, DimensionalData
+      DataStructures, ColorSchemes, JLD2, DimensionalData, FileIO
 
 using DynamicEnergyBudgets: scaling_correction, define_organs,
       photosynthesis, split_state, HasCN, HasCNE, has_reserves, tempcorr_pars,
@@ -10,6 +10,8 @@ using DynamicEnergyBudgets: scaling_correction, define_organs,
 using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, g, mg, cm, m, s, hr, d, mol, mmol, μmol, σ
 
 import Plots:px, pct, GridLayout
+
+const STATELABELS = ["VS", "CS", "NS", "VR", "CR", "NR"]
 
 loadenvironments(dir) = begin
     locationspath = joinpath(dir, "data/locations.jld")
@@ -23,10 +25,9 @@ end
 init_state(model::AbstractOrganism) = init_state(has_reserves.(define_organs(model, 1hr)), model)
 init_state(::NTuple{2,HasCN}, model) = begin
     xdim = dims(first(model.records).J, X)
-    xval = DimensionalData.unwrap(val(xdim))
     A = zeros(length(xdim) * length(model.records)) * mol
-    newxval = Val((map(x -> Symbol(x, :S), xval)..., map(x -> Symbol(x, :R), xval)...))
-    newxdim = X(newxval, mode(xdim), nothing)
+    newxval = Val((:VS, :CS, :NS, :VR, :CR, :NR))
+    newxdim = X(newxval, Categorical(), nothing)
     u = DimensionalArray(A, (newxdim,))
     u[:VS] = 0.2mg / (25.0g/mol)
     u[:CS] = 5.0mg  / (25.0g/mol)

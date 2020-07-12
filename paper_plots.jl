@@ -24,8 +24,8 @@ model = set_allometry(model, u);
 # theme(:solarized_light)
 theme(:wong2)
 gr()
-pyplot()
-plotly()
+# plotly()
+
 
 # Single-simulation plots
 plot_crossover(model, environment, u, envstart, 2)
@@ -43,14 +43,17 @@ savefig("plots/assimswp")
 plot_assim(model, environment, u, envstart, 6, 1:5)
 savefig("plots/assimall")
 
+
 # Multi-simulation plots
 gr()
 plot_years(model, environments, u, envstart)
 savefig("plots/all")
 plot_years(model, Dict(:t1=>environments[:t1]), u, 1.0hr)
 savefig("plots/t1")
-# plot_years(model, Dict(:t2=>environments[:t2]), u, 1.0hr, "t2")
-# plot_years(model, Dict(:t3=>environments[:t3]), u, 1.0hr, "t3")
+plot_years(model, Dict(:t2=>environments[:t2]), u, 1.0hr, "t2")
+savefig("plots/t2")
+plot_years(model, Dict(:t3=>environments[:t3]), u, 1.0hr, "t3")
+savefig("plots/t3")
 
 
 # Plot temperature response curve
@@ -62,35 +65,59 @@ plot(x -> tempcorr(tempcorr_pars(model.shared), K(x)), temps;
 )
 savefig("plots/tempcorr")
 
-v = vars[1]
-
 
 
 # Map #################################################################
 
-include("mapping.jl")
+include(joinpath(dir, "src/mapping.jl"))
 
+datapath = "/home/raf/Data/microclim"
+radpath = joinpath(datapath, "SOLR/SOLR_2001.nc")
+isdir(datapath) || error("Need to set datapath to you microclim dataset folder")
+long = NCDatasets.Dataset(ds -> Array(ds["longitude"]), radpath)
+lat = NCDatasets.Dataset(ds -> Array(ds["latitude"]), radpath)
+
+skip = (:snowdepth, :soilwatercontent) 
+MONTH_HOURS = 365.25 / 12 * 24hr
+years = 2005:2010
+shade = 0
+
+# Import models
+vars = (Vars(), Vars())
+models = OrderedDict()
+modeldir = joinpath(dir, "models")
+include.(joinpath.(Ref(modeldir), readdir(modeldir)));
+model = deepcopy(models[:bb]);
+model.environment_start[] = oneunit(model.environment_start[])
+
+# Load Australian border shapefile
+shapefile = joinpath(dir, "data/ausborder_polyline.shp")
+shp = open(shapefile) do io
+    read(io, Shapefile.Handle)
+end
+
+if isfile(join(dir, "data/yearly_outputs.jld2"))
+    yearly_outputs = JLD2.load("data/yearly_outputs.jld2", "yearly_outputs")
+else
+    @time yearly_outputs = map(y -> run_year(y, datapath, shade, model, skip), years)
+    save("data/yearly_outputs.jld2", Dict("yearly_outputs" => yearly_outputs))
+end
+yearly_outputs
+
+
+# Simple outline plots
 points = (getindex.(Ref(long), [65, 60, 55]), getindex.(Ref(lat), [35, 35, 35]))
-scaling_plot(long, lat, points, ["T1", "T2", "T3"], (800,600), 3)
-savefig("plots/scaling.png")
+shape_plot(long, lat, points, ["T1", "T2", "T3"], (800,600), 3)
+savefig("plots/shape.png")
 nswlong = long[45:end]
 nswlat = lat[30:46]
-scaling_plot(nswlong, nswlat, points, ["T1", "T2", "T3"], (300,300), 5)
+shape_plot(nswlong, nswlat, points, ["T1", "T2", "T3"], (300,300), 5)
 savefig("plots/nsw.png")
 
-points = (getindex.(Ref(long), [65]), getindex.(Ref(lat), [35]))
-scaling_plot(nswlong, nswlat, points, "T1", (300, 300), 5)
-savefig("plots/t1scaling.png")
-points = (getindex.(Ref(long), [60]), getindex.(Ref(lat), [35]))
-scaling_plot(nswlong, nswlat, points, "T2", (300, 300), 5)
-savefig("plots/t2scaling.png")
-points = (getindex.(Ref(long), [55]), getindex.(Ref(lat), [35]))
-scaling_plot(nswlong, nswlat, points, "T3", (300, 300), 5)
-savefig("plots/t3scaling.png")
-
-# Plot
+# Maxium structural mass plot
 gr()
-
+maximum(skipmissing(yearly_outputs[1]))
+yearly_outputs[1][20, 20]
 year_sums = combine_year.(yearly_outputs)
 plts = build_plot.(year_sums, string.(years), (false, true, false, true, false, true))
 maps = plot(plts...; layout=grid(length(plts)÷2, 2, widths=[0.423, 0.577]), size=(1000,1300), dpi=100)
@@ -102,5 +129,4 @@ maps = plot(plts...; layout=grid(length(plts)÷2, 2, widths=[0.423, 0.577]), siz
 # plts = build_plot.(months, string.(1:12))
 # data = months[1]
 # name = "test"
-maximum(year_sums[6] .* 25)
-
+# maximum(year_sums[6] .* 25)
