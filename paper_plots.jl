@@ -18,11 +18,13 @@ u = init_state(model)
 model = set_allometry(model, u);
 
 # Set up plots
+
 # theme(:sand)
 # theme(:solarized)
 # theme(:juno)
 # theme(:solarized_light)
 theme(:wong2)
+
 gr()
 # plotly()
 
@@ -71,7 +73,10 @@ savefig("plots/tempcorr")
 
 include(joinpath(dir, "src/mapping.jl"))
 
-datapath = "/home/raf/Data/microclim"
+# Download data. This will take quite a few hours, and requires 100GB storage unzipped.
+datapath = "/home/raf/Data/microclim_oz"
+download_microclim(datapath; overwrite=false)
+
 radpath = joinpath(datapath, "SOLR/SOLR_2001.nc")
 isdir(datapath) || error("Need to set datapath to you microclim dataset folder")
 long = NCDatasets.Dataset(ds -> Array(ds["longitude"]), radpath)

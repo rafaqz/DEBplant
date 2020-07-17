@@ -40,7 +40,7 @@ plotly() # Use Plotly for plotting - can be zoomed in
 # theme(:solarized_light)
 theme(:wong2)
 theme(:default)
-# plotsize = (2000, 1000) # Set plot size in ui
+plotsize = (2000, 1000) # Set plot size in ui
 
 # Build the app interface
 app = ModelApp(models, environments, plotsize, tspan, nothing);

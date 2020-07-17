@@ -282,7 +282,7 @@ end
 
 function plot_assim(model, environment, u, envstart, months, plotids)
     tstop = round(typeof(1hr), months * MONTH_HOURS)
-    rnge = ustrip(envstart:1hr:envstart+tstop)
+    rnge = ustrip.(envstart:1hr:envstart+tstop)
     plotstart = 1hr
     model.environment = environment
     model.environment_start[] = envstart
@@ -290,7 +290,7 @@ function plot_assim(model, environment, u, envstart, months, plotids)
     tspan = ustrip.((plotstart, tstop))
     prob = DiscreteProblem(model, ustrip.(u), tspan)
     sol = solve(prob, FunctionMap(scale_by_time = true))
-    xticks=(ustrip(0hr:MONTH_HOURS:tstop), MONTHS[1+STARTMONTH:months+1+STARTMONTH])
+    xticks=(ustrip.(0hr:MONTH_HOURS:tstop), MONTHS[1+STARTMONTH:months+1+STARTMONTH])
     yticks = (-0.05:0.05:0.2)
     st = soiltemperature(model.environment) .|> °C
     rh = relhumidity(model.environment)
@@ -325,7 +325,7 @@ function plot_assim(model, environment, u, envstart, months, plotids)
     # radplot = plot(radiation(environment); ylab="Radiation", color=:black, legend=:none, xlabel="Month")
     soilcolors = permutedims(reverse(get.(Ref(ColorSchemes.copper), 0.0:1/7:1)))
     swpyticks = ([10^0, 10^1], string.(["-10e0", "-10e1"], Ref(" kPa")))
-    swp = -1 .* ustrip(soilwaterpotential(model.environment)) # .|> MPa
+    swp = -1 .* ustrip.(soilwaterpotential(model.environment)) # .|> MPa
     depthplot = plot(ustrip.(hcat(model.records[1].vars.height, model.records[2].vars.height .* -1));
         ylabel="Height/\nDepth (m)",
         labels=["Shoot" "Root"],
