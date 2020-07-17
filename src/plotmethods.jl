@@ -196,7 +196,7 @@ function plot_crossover(model, environment, u, envstart, months)
     model.environment_start[] = envstart
     model.dead[] = false
     tspan = ustrip.((plotstart, tstop))
-    prob = DiscreteProblem(model, ustrip(u), tspan)
+    prob = DiscreteProblem(model, ustrip.(u), tspan)
     sol = solve(prob, FunctionMap(scale_by_time = true))
     n = length(u) ÷ 2
     solt = sol'
@@ -218,10 +218,10 @@ function plot_crossover(model, environment, u, envstart, months)
 end
 
 function plot_list(model, solt, envstart, tstop, months, xlims; kwargs...)
-    rnge = ustrip(envstart:1hr:envstart+tstop)
+    rnge = ustrip.(envstart:1hr:envstart+tstop)
     yticks = ([10^-1, 10^0, 10^1],
               string.(["-0.1", "-1", "-10"], Ref(" kPa")))
-    xticks=(ustrip(0hr:MONTH_HOURS:tstop), MONTHS[1+STARTMONTH:months+1+STARTMONTH])
+    xticks=(ustrip.(0hr:MONTH_HOURS:tstop), MONTHS[1+STARTMONTH:months+1+STARTMONTH])
     rad = radiation(model.environment)
     radplot = plot(rad[rnge];
         ylab="Radiation",
