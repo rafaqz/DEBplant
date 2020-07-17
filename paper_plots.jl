@@ -73,9 +73,10 @@ savefig("plots/tempcorr")
 
 include(joinpath(dir, "src/mapping.jl"))
 
-# Download data. This will take quite a few hours, and requires 100GB storage unzipped.
+# Download data. 
 datapath = "/home/raf/Data/microclim_oz"
-download_microclim(datapath; overwrite=false)
+# This will take quite a few hours, and requires 100GB storage unzipped.
+# download_microclim(datapath; overwrite=false)
 
 radpath = joinpath(datapath, "SOLR/SOLR_2001.nc")
 isdir(datapath) || error("Need to set datapath to you microclim dataset folder")
