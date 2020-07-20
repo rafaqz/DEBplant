@@ -23,7 +23,7 @@ dir = "DEBSCRIPTS" in keys(ENV) ? ENV["DEBSCRIPTS"] : pwd()
 include(joinpath(dir, "src/app.jl"))
 
  # Load environments 
-environments, tspan = loadenvironments(dir);
+environments, tspan = transect_from_saved(dir);
 environments[:controls] = MicroclimControl();
 
 # Load models

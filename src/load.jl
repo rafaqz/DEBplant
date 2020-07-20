@@ -1,6 +1,6 @@
 using Setfield
 using Unitful, Plots, UnitfulRecipes, Microclimate, DataStructures, Flatten, FieldMetadata, 
-      LabelledArrays, OrdinaryDiffEq, Photosynthesis, DynamicEnergyBudgets, 
+      OrdinaryDiffEq, Photosynthesis, DynamicEnergyBudgets, 
       DataStructures, ColorSchemes, JLD2, DimensionalData, FileIO
 
 using DynamicEnergyBudgets: scaling_correction, define_organs,
@@ -13,12 +13,26 @@ import Plots:px, pct, GridLayout
 
 const STATELABELS = ["VS", "CS", "NS", "VR", "CR", "NR"]
 
-loadenvironments(dir) = begin
-    locationspath = joinpath(dir, "data/locations.jld")
+function transect_from_saved(projectdir)
+    locationspath = joinpath(projectdir, "data/locations.jld2")
     @load locationspath t1 t2 t3
     environments = OrderedDict{Symbol,Any}(:t1 => t1, :t2 => t2, :t3 => t3)
     env = t1
     tspan = (0:1:length(radiation(env)) - 1) * u"hr"
+    environments, tspan
+end
+
+function transect_from_netcdf(microclimdir::String, years, shade)
+    envgrid = load_grid(microclimdir, years, shade);
+
+    t1 = MicroclimPoint(envgrid, CartesianIndex(65, 35))
+    t2 = MicroclimPoint(envgrid, CartesianIndex(60, 35))
+    r3 = MicroclimPoint(envgrid, CartesianIndex(55, 35))
+
+    save(joinpath(dir, "data/locations.jld2"), Dict("t1" => t1, "t2" => t2, "t3" => t3))
+
+    tspan = (0:1:length(radiation(env)) - 1) * u"hr"
+    environments = OrderedDict{Symbol,Any}(:t1 => t1, :t2 => t2, :t3 => t3)
     environments, tspan
 end
 
@@ -50,27 +64,3 @@ set_allometry(model, state) = begin
     model
 end
 
-# function update_vars(m, tstop)
-    # m = @set m.records[1].vars = build_vars(Vars(), 1:ustrip(tstop))
-    # m = @set m.records[2].vars = build_vars(Vars(), 1:ustrip(tstop))
-    # m
-# end
-
-function discrete_solve(model, u0, tstop)
-    u = deepcopy(u0)
-    mx = deepcopy(u0)
-    du = u ./ unit(tstop)
-    for i = 2oneunit(tstop):oneunit(tstop):tstop
-        model(du, u, nothing, i)
-        model.dead[] && break
-        u .+= du .* unit(tstop)
-        mx = max.(mx, u)
-    end
-    # Return the maximum values
-    mx
-end
-
-# function discrete_solve(model, u, tstop)
-    # prob = DiscreteProblem(model, u, (oneunit(tstop), tstop))
-    # solve(prob, FunctionMap(scale_by_time = true))
-# end

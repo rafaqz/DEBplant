@@ -125,9 +125,9 @@ version = "1.16.0+4"
 
 [[ChainRulesCore]]
 deps = ["MuladdMacro"]
-git-tree-sha1 = "87e289253a5fc690c4860a41bbd427e16576f716"
+git-tree-sha1 = "9907341fe861268ddd0fc60be260633756b126a2"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.3"
+version = "0.9.4"
 
 [[Clustering]]
 deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
@@ -269,9 +269,9 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[DiffEqBase]]
 deps = ["ArrayInterface", "ChainRulesCore", "ConsoleProgressMonitor", "DataStructures", "Distributed", "DocStringExtensions", "FunctionWrappers", "IterativeSolvers", "IteratorInterfaceExtensions", "LabelledArrays", "LinearAlgebra", "Logging", "LoggingExtras", "MuladdMacro", "Parameters", "Printf", "ProgressLogging", "RecipesBase", "RecursiveArrayTools", "RecursiveFactorization", "Requires", "Roots", "SparseArrays", "StaticArrays", "Statistics", "SuiteSparse", "TableTraits", "TerminalLoggers", "TreeViews", "ZygoteRules"]
-git-tree-sha1 = "71499ee24ffe00892a9e80cc953fe0421a54b552"
+git-tree-sha1 = "7f241c049129a0e765ef449b634990409286ed75"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.40.8"
+version = "6.40.9"
 
 [[DiffResults]]
 deps = ["StaticArrays"]
@@ -298,9 +298,9 @@ version = "0.2.3"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
-git-tree-sha1 = "bed62cc5afcff16de797a9f38fb358b74071f785"
+git-tree-sha1 = "23717536c81b63e250f682b0e0933769eecd1411"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.9.0"
+version = "0.8.2"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -308,9 +308,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "78c4c32a2357a00a0a7d614880f02c2c6e1ec73c"
+git-tree-sha1 = "21fe8727469b4eeb5a006e0399588180f5dc9db4"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.23.4"
+version = "0.23.5"
 
 [[DocStringExtensions]]
 deps = ["LibGit2", "Markdown", "Pkg", "Test"]
@@ -320,9 +320,7 @@ version = "0.8.2"
 
 [[DynamicEnergyBudgets]]
 deps = ["ConstructionBase", "DimensionalData", "DocStringExtensions", "FieldDefaults", "FieldDocTables", "FieldMetadata", "Flatten", "MacroTools", "Mixers", "Requires", "Setfield", "SimpleRoots", "StaticArrays", "Unitful"]
-git-tree-sha1 = "38431a630c662f4954cf69b47634f4df2d48f83b"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
+path = "/home/raf/julia/DynamicEnergyBudgets"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
 version = "0.0.1"
 
@@ -370,8 +368,6 @@ version = "3.3.9+5"
 [[FieldDefaults]]
 deps = ["FieldMetadata", "Setfield"]
 git-tree-sha1 = "a0915a0c68fb96899c1e1b09b30426210572cbf8"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/FieldDefaults.jl"
 uuid = "49426c49-986f-5969-8844-d5cc96441cfc"
 version = "0.3.1"
 
@@ -383,16 +379,14 @@ version = "0.1.0"
 
 [[FieldMetadata]]
 git-tree-sha1 = "d8b1bfc32c25116666412c040b308ff3397da128"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/FieldMetadata.jl"
 uuid = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
 version = "0.3.0"
 
 [[FileIO]]
 deps = ["Pkg"]
-git-tree-sha1 = "202335fd24c2776493e198d6c66a6d910400a895"
+git-tree-sha1 = "f354b2087a3b01c1d7152c19f45886c8a036fa5e"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.3.0"
+version = "1.4.0"
 
 [[FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
@@ -405,9 +399,9 @@ version = "0.8.13"
 
 [[FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "b02b6f6ea2c33f86a444f9cf132c1d1180a66cfd"
+git-tree-sha1 = "80becc23db3942d9e5eb8d0d42e725b9c46616f8"
 uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
-version = "2.4.1"
+version = "2.5.0"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -424,8 +418,6 @@ version = "0.2.3"
 [[Flatten]]
 deps = ["ConstructionBase", "FieldMetadata"]
 git-tree-sha1 = "c110314771a9b3d53a6dbcdaeecd58cfcc447ffc"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/Flatten.jl"
 uuid = "4c728ea3-d9ee-5c9a-9642-b6f7d7dc04fa"
 version = "0.3.5"
 
@@ -619,8 +611,6 @@ version = "0.10.3"
 [[InteractBase]]
 deps = ["Base64", "CSSUtil", "Colors", "Dates", "JSExpr", "JSON", "Knockout", "Observables", "OrderedCollections", "Random", "WebIO", "Widgets"]
 git-tree-sha1 = "2a7c0cc638f10b44e0e8b77b8f9a7f839ca853ba"
-repo-rev = "master"
-repo-url = "https://github.com/piever/InteractBase.jl"
 uuid = "d3863d7c-f0c8-5437-a7b4-3ae773c01009"
 version = "0.10.5"
 
@@ -670,9 +660,9 @@ version = "0.10.0"
 
 [[JLD2]]
 deps = ["CodecZlib", "DataStructures", "FileIO", "Mmap", "Pkg", "Printf", "UUIDs"]
-git-tree-sha1 = "e03e697cf84c275ece9cbefd1eabaf49bf5e7254"
+git-tree-sha1 = "9353b717ee4e27beab4e902c92a06bb5f160d2cf"
 uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
-version = "0.1.13"
+version = "0.1.14"
 
 [[JSExpr]]
 deps = ["JSON", "MacroTools", "Observables", "WebIO"]
@@ -724,8 +714,6 @@ version = "1.1.0"
 [[LabelledArrays]]
 deps = ["ArrayInterface", "LinearAlgebra", "MacroTools", "StaticArrays"]
 git-tree-sha1 = "5e04374019448f8509349948ab504f117e3b575a"
-repo-rev = "master"
-repo-url = "https://github.com/JuliaDiffEq/LabelledArrays.jl.git"
 uuid = "2ee39098-c373-598a-b85f-a56591580800"
 version = "1.3.0"
 
@@ -847,9 +835,9 @@ version = "0.8.18"
 
 [[Lz4_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "38029bbf6221d27d1e843d484a5d05d3fa8facff"
+git-tree-sha1 = "51b1db0732bbdcfabb60e36095cc3ed9c0016932"
 uuid = "5ced341a-0733-55b8-9ab6-a4889d929147"
-version = "1.9.2+1"
+version = "1.9.2+2"
 
 [[MKL_jll]]
 deps = ["IntelOpenMP_jll", "Libdl", "Pkg"]
@@ -886,9 +874,7 @@ version = "0.3.1"
 
 [[Microclimate]]
 deps = ["FieldDefaults", "FieldMetadata", "NCDatasets", "Unitful"]
-git-tree-sha1 = "4788a338d8ee7859188a505bae798927ebe33b3d"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/Microclimate.jl"
+path = "/home/raf/julia/Microclimate"
 uuid = "e0eb800d-4a9f-54ae-b0f8-217228d9d7c3"
 version = "0.0.0"
 
@@ -955,9 +941,9 @@ version = "0.3.4"
 
 [[NearestNeighbors]]
 deps = ["Distances", "StaticArrays"]
-git-tree-sha1 = "93107e3cdada73d63245ed8170dcae680f0c8fd8"
+git-tree-sha1 = "8bc6180f328f3c0ea2663935db880d34c57d6eae"
 uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.6"
+version = "0.4.4"
 
 [[NetCDF]]
 deps = ["BinDeps", "CondaBinDeps", "DiskArrays", "Formatting", "Libdl"]
@@ -1035,10 +1021,10 @@ uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
 version = "8.42.0+2"
 
 [[PDMats]]
-deps = ["Arpack", "LinearAlgebra", "SparseArrays", "SuiteSparse", "Test"]
-git-tree-sha1 = "2fc6f50ddd959e462f0a2dbc802ddf2a539c6e35"
+deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse", "Test"]
+git-tree-sha1 = "b3405086eb6a974eba1958923d46bc0e1c2d2d63"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
-version = "0.9.12"
+version = "0.10.0"
 
 [[Pango_jll]]
 deps = ["Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "Libdl", "Pkg"]
@@ -1286,8 +1272,6 @@ version = "0.3.1"
 
 [[SimpleRoots]]
 git-tree-sha1 = "9a0a1c7d1334a0124ce4de17e2de85393050efef"
-repo-rev = "master"
-repo-url = "https://github.com/rafaqz/SimpleRoots.jl"
 uuid = "6accb78c-d340-5052-9dc3-a835939e19d0"
 version = "0.1.0"
 
@@ -1420,9 +1404,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[Unitful]]
 deps = ["ConstructionBase", "LinearAlgebra", "Random"]
-git-tree-sha1 = "102f71a4e174f35dfa04176033b26ae6e2549c36"
-repo-rev = "master"
-repo-url = "https://github.com/ajkeller34/Unitful.jl"
+git-tree-sha1 = "a061dada333813818aa7454f93c63a5cab6ea981"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
 version = "1.3.0"
 

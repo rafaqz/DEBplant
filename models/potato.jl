@@ -1,5 +1,5 @@
 models[:potato] = Plant(
-    environment = first(values(environments)),
+    environment = environment,
     vars = vars,
     time = 0hr:1hr:8760hr*2,
     params = (
