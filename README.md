@@ -6,8 +6,6 @@ Journal of Ecological modelling.
 
 ![Transect simulations](https://media.githubusercontent.com/media/rafaqz/DEBplant/master/plots/transect_multiplot.png)
 
-![Map](https://media.githubusercontent.com/media/rafaqz/DEBplant/master/plots/yearly_map.png)
-
 Scripts are provided for building al the plots from the paper, and also for
 using the interactive user-interface used to examine and simplify the model.
 
