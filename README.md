@@ -26,8 +26,9 @@ After that you can hit escape to leave the Pkg mode, and use the scripts:
 
 - ui.jl loads the interactive user interface
 - paper_plots.jl builds figures for the paper
-- paper_maps.jl builds mapped figures for the paper. Note this requires very
-  large download (380 GB unzipped) and long build time.
+- paper_maps.jl builds mapped figures for the paper. By default this will run usig pre-save
+  simulaitons, but requires very large download (380 GB unzipped) and long build time
+  to run from scratch.
 
 As loading all the packages will take quite a while, load these in a julia
 session that you keep open (ie in Atom/Juno), instead of running them from the
@@ -35,7 +36,6 @@ command line each time.
 
 If you have any problems, open an issue in this repository, including your
 version of Julia, description of the problem and error outputs where necessary.
-
 
 
 ![User interface](https://media.githubusercontent.com/media/rafaqz/DEBplant/master/plots/ui.png)
