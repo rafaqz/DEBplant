@@ -50,5 +50,3 @@ app = ModelApp(models, environments, plotsize, tspan, nothing);
 
 # Or create an electron desktop app
 electronapp(app; zoom=0.5)
-
-# TODO: check saved code files: vars?

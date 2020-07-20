@@ -23,10 +23,16 @@ include(joinpath(dir, "src/mapping.jl"))
 # download_microclim(datapath; overwrite=false)
 
 # Import spatial data
-radpath = joinpath(datapath, "SOLR/SOLR_2001.nc")
-isdir(datapath) || error("Need to set datapath to you microclim dataset folder")
-lons = NCDatasets.Dataset(ds -> Array(ds["longitude"]), radpath)
-lats = reverse(NCDatasets.Dataset(ds -> Array(ds["latitude"]), radpath))
+
+# From netcdf files
+# radpath = joinpath(datapath, "SOLR/SOLR_2001.nc")
+# lons = NCDatasets.Dataset(ds -> Array(ds["longitude"]), radpath)
+# lats = reverse(NCDatasets.Dataset(ds -> Array(ds["latitude"]), radpath))
+# save(joinpath(dir, "data/coords.jld2"), Dict("lats" => lats, "lons" => lons))
+
+# From saved jld2
+lats, lons = load(joinpath(dir, "data/coords.jld2"), "lats", "lons")
+
 
 # Load Australian border shapefile
 shapefile = joinpath(dir, "data/ausborder_polyline.shp")
@@ -60,6 +66,7 @@ shade = 0
 if !run_sims && isfile(joinpath(dir, "data/yearly_outputs.jld2"))
     yearly_outputs = load(joinpath(dir, "data/yearly_outputs.jld2"), "yearly_outputs")
 else
+    isdir(datapath) || error("Need to set `datapath` to you microclim dataset folder")
     @time yearly_outputs = map(y -> run_year(y, datapath, shade, model, skip), years)
     save(joinpath(dir, "data/yearly_outputs.jld2"), Dict("yearly_outputs" => yearly_outputs))
 end
