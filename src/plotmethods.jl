@@ -144,7 +144,7 @@ function plot_years(model, transect, u, envstart)
             # Double plot this for flipped ylims range
             soilwaterplot = plot!(plot_swp(model, "", envrange; 
                 ylab=ENVLABELS[:swp],
-                xlab=envname,
+                xlab=uppercase(string(envname)),
                 linewidth=MULTIYEARLINEWIDTH, 
                 legend=false,
             ), (1, 20000.0))
@@ -174,7 +174,7 @@ function plot_years(model, transect, u, envstart)
             )
             soilwaterplot = plot!(plot_swp(model, envname, envrange; 
                 ylab=" ",
-                xlab=envname,
+                xlab=uppercase(string(envname)),
                 yshowaxis=false, 
                 linewidth=MULTIYEARLINEWIDTH,
                 legend=false,
