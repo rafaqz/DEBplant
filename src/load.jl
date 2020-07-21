@@ -3,9 +3,10 @@ using Unitful, Plots, UnitfulRecipes, Microclimate, DataStructures, Flatten, Fie
       OrdinaryDiffEq, Photosynthesis, DynamicEnergyBudgets, Dates,
       DataStructures, ColorSchemes, JLD2, DimensionalData, FileIO
 
-using DynamicEnergyBudgets: scaling_correction, define_organs,
+using DynamicEnergyBudgets: Records, PlottableRecords, scaling_correction, define_organs,
       photosynthesis, split_state, HasCN, HasCNE, has_reserves, tempcorr_pars,
-      assimilation_pars, parconv, w_V, build_vars, allometry_pars, tempcorr
+      assimilation_pars, parconv, w_V, build_vars, allometry_pars, 
+      tempcorr, scaling_correction, photosynthesis
 
 using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, g, mg, cm, m, s, hr, d, mol, mmol, μmol, σ
 
