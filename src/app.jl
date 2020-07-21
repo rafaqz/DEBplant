@@ -70,20 +70,6 @@ function sol_plot(model::AbstractOrganism, params::AbstractVector, u::AbstractVe
         ylabel="State (CMol)",
         xlabel=string(typeof(m2.params[2].assimilation_pars).name, " - time (hr)")
     )
-    # plot(solplot1, solplot2, layout=Plots.GridLayout(2, 1))
-    # s = sol' # .* m2.shared.core_pars.w_V
-    # s1 = view(s, :, 1:6)
-    # s2 = s[:, 7:12]
-    # solplot = (plot(sol.t, s1, labels=reshape([STATELABELS[1:6]...], 1, 6)),)
-    # plot(sol.t, s2, labels=reshape([STATELABELS[7:12]...], 1, 6))
-    # if plotarea
-    # organs = define_organs(m2, 1hr)
-    # o = organs[1]
-        # areaplot = plot(s[:, 2] .* assimilation_pars(o).SLA, ylabel="C uptake modification", xlabel="Surface area")
-        # plot(solplot, areaplot, layout=Plots.GridLayout(2, 1))
-    # else
-        # solplot
-    # end
     solplot1, solplot2
 end
 
