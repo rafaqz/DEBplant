@@ -320,7 +320,7 @@ version = "0.8.2"
 
 [[DynamicEnergyBudgets]]
 deps = ["ConstructionBase", "DimensionalData", "DocStringExtensions", "FieldDefaults", "FieldDocTables", "FieldMetadata", "Flatten", "Mixers", "Requires", "Setfield", "SimpleRoots", "Unitful"]
-git-tree-sha1 = "01127444b4b5d207dbaf024b2b87127c279e864e"
+git-tree-sha1 = "adce4793094ece930717ff713743cd9c13bdb920"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
