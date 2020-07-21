@@ -319,8 +319,8 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.2"
 
 [[DynamicEnergyBudgets]]
-deps = ["ConstructionBase", "DimensionalData", "DocStringExtensions", "FieldDefaults", "FieldDocTables", "FieldMetadata", "Flatten", "MacroTools", "Mixers", "Requires", "Setfield", "SimpleRoots", "StaticArrays", "Unitful"]
-git-tree-sha1 = "c31961e99c1a8c0a57c3032f6b6d0cd5d9def222"
+deps = ["ConstructionBase", "DimensionalData", "DocStringExtensions", "FieldDefaults", "FieldDocTables", "FieldMetadata", "Flatten", "Mixers", "Requires", "Setfield", "SimpleRoots", "Unitful"]
+git-tree-sha1 = "01127444b4b5d207dbaf024b2b87127c279e864e"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/DynamicEnergyBudgets.jl"
 uuid = "6ffd65d2-8b0b-5314-9c5b-6efe83b0316c"
@@ -876,7 +876,7 @@ version = "0.3.1"
 
 [[Microclimate]]
 deps = ["FieldDefaults", "FieldMetadata", "NCDatasets", "Unitful"]
-git-tree-sha1 = "c0ceee4710025091911595817ba8937647894971"
+git-tree-sha1 = "d9a03c42d101fa3f4de6fcbadc9c04a5c53ffaa8"
 repo-rev = "master"
 repo-url = "https://github.com/rafaqz/Microclimate.jl"
 uuid = "e0eb800d-4a9f-54ae-b0f8-217228d9d7c3"
