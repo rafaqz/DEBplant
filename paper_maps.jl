@@ -19,7 +19,7 @@ include(joinpath(dir, "src/mapping.jl"))
 # Load environment -----------------------------------------------------
 
 # Download data. 
-# datapath = "/home/raf/Data/microclim_oz"
+datapath = "/home/raf/Data/microclim_oz"
 # download_microclim(datapath; overwrite=false)
 
 # Import spatial data

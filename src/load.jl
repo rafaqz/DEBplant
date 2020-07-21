@@ -5,7 +5,7 @@ using Unitful, Plots, UnitfulRecipes, Microclimate, DataStructures, Flatten, Fie
 
 using DynamicEnergyBudgets: scaling_correction, define_organs,
       photosynthesis, split_state, HasCN, HasCNE, has_reserves, tempcorr_pars,
-      assimilation_pars, parconv, w_V, build_vars, allometry_pars
+      assimilation_pars, parconv, w_V, build_vars, allometry_pars, tempcorr
 
 using Unitful: °C, K, Pa, kPa, MPa, J, kJ, W, L, g, kg, g, mg, cm, m, s, hr, d, mol, mmol, μmol, σ
 
