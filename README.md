@@ -2,7 +2,7 @@ These scripts accompany the paper:
 
 "Integrating dynamic plant growth models and microclimates for species
 distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in the
-Journal of Ecological modelling.
+Journal of Ecological modelling ([preprint](https://ecoevorxiv.org/ja4m6)).
 
 ![Transect simulations](https://media.githubusercontent.com/media/rafaqz/DEBplant/master/plots/transect_multiplot.png)
 
