@@ -1,4 +1,6 @@
-These scripts accompany the paper:
+These scripts leverage [DynamicEnergyBudgets.jl](https://github.com/rafaqz/DynamicEnergyBudgets.jl), 
+[Photosynthesis.jl](https://github.com/rafaqz/Photosynthesis.jl) and [Microclimate.jl](https://github.com/rafaqz/Microclimate.jl), 
+and accompany the paper:
 
 "Integrating dynamic plant growth models and microclimates for species
 distribution modelling" by Rafael Schouten, Peter Vesk and Michael Kearney, in the
