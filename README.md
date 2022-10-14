@@ -11,8 +11,12 @@ Journal of Ecological modelling ([preprint](https://ecoevorxiv.org/ja4m6)).
 Scripts are provided for building al the plots from the paper, and also for
 using the interactive user-interface used to examine and simplify the model.
 
+__Notice: these scripts are for julia 1.3, and many of these packages have
+changed and are out of date. If you want this or DynamicEnergyBudgets.jl to work
+on more recent versions, please make an issue__
 
-To set up, run julia in this folder, then run:
+
+To set up, run julia 1.3 in this folder, then run:
 
 ```julia-repl
 ]
