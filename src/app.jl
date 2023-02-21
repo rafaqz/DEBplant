@@ -1,6 +1,6 @@
 using Setfield, Interact, Blink
 using Plots, UnitfulRecipes, StatsPlots, PlotNested, 
-      Codify, Select, ColorSchemes, DimensionalData, Mux
+      Codify, Select, ColorSchemes, DimensionalData
 
 include(joinpath(dirname(@__FILE__), "load.jl"))
 
@@ -382,7 +382,7 @@ electronapp(app; zoom=0.5) = begin
     body!(w, ui);
 end
 
-webapp(app; port=8000) = WebIO.webio_serve(Mux.page("/", req -> app(req)), port)
+webapp(app; port=8000) = webio_serve(page("/", req -> app(req)), port)
 
 
 savecode(app, name) = begin
